@@ -14,8 +14,10 @@ maxiters=1000;
 
 for j=1:outiters
     fprintf(2, 'Iter %d / %d\n', j, outiters);
-    s = RandStream('mt19937ar','Seed',j);
-    aux=randperm(s, n);
+    % s = RandStream('mt19937ar','Seed',j);
+    rand('seed', 0);
+    % aux=randperm(s, n);
+    aux=randperm(n);
     m = X(:,aux(1:k));
     %[~,label] = max(bsxfun(@minus,m'*X,dot(m,m,1)'/2),[],1); % assign samples to the nearest centers
     [label] = constrained_assignment(X, m,n/k);
@@ -23,7 +25,7 @@ for j=1:outiters
     iters=0;
 
 
-    while any(label ~= last) & iters < maxiters
+    while any(label ~= last) && iters < maxiters
         [u,~,label] = unique(label);   % remove empty clusters
         k = length(u);
         E = sparse(1:n,label,1,n,k,n);  % transform label into indicator matrix
