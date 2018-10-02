@@ -21,6 +21,7 @@ def monochromatic_approx(W, args):
     W = np.transpose(W, [0, 3, 1, 2])
     num_colors = args["num_colors"]
     even = args["even"]
+    even = False # litekmeans not implemented yet
     Wapprox = W
     Wmono = W
     C = []
@@ -31,13 +32,21 @@ def monochromatic_approx(W, args):
         (u, s, v) = la.svd(folded_filter, full_matrices=False)
         s = np.diag(s)
         vt = v.transpose()
-        C.append(u[:, 0, np.newaxis])
-        S.append(s[0, 0, np.newaxis, np.newaxis] * vt[:, 0, np.newaxis])
+        C.append(u[:, 0, np.newaxis].squeeze())
+        S.append(s[0, 0, np.newaxis, np.newaxis] * vt[:, 0, np.newaxis].squeeze())
         chunk = u[:, 0, np.newaxis] * s[0, 0, np.newaxis, np.newaxis] * v[0, np.newaxis, :]
-        approx0.append(chunk.reshape(W.shape[1], W.shape[2], W.shape[3],))
+        approx0.append(chunk.reshape(W.shape[1], W.shape[2], W.shape[3]))
     C = np.asarray(C)
     S = np.asarray(S)
     approx0 = np.asarray(approx0)
     print(approx0.shape)
+    print(C.shape)
+
+    if even:
+        None # implement litekmeans
+    else:
+        max_iter = 1000
+        (codebook, distortion) = kmeans(C, num_colors, iter=max_iter)
+    print(codebook)
 
     return [Wapprox, Wmono, num_colors, even]
