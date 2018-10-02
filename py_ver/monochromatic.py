@@ -2,6 +2,7 @@
 
 import numpy as np
 from numpy import linalg as la
+from scipy.cluster.vq import kmeans
 
 
 # This approximation clusters the first left singular vectors of each of
