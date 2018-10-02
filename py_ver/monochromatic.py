@@ -30,18 +30,13 @@ def monochromatic_approx(W, args):
         (u, s, v) = la.svd(folded_filter, full_matrices=False)
         s = np.diag(s)
         vt = v.transpose()
-        C.append(u[:, 0])
-        S.append(s[0, 0] * vt[:, 0])
-        chunk = u[:, 0] * s[0, 0] * v[:, 0]
-        print(chunk.shape)
+        C.append(u[:, 0, np.newaxis])
+        S.append(s[0, 0, np.newaxis, np.newaxis] * vt[:, 0, np.newaxis])
+        chunk = u[:, 0, np.newaxis] * s[0, 0, np.newaxis, np.newaxis] * v[0, np.newaxis, :]
         approx0.append(chunk.reshape(W.shape[1], W.shape[2], W.shape[3],))
     C = np.asarray(C)
     S = np.asarray(S)
     approx0 = np.asarray(approx0)
-    # print(np.shape(folded_filter))
-    # print(np.shape(u))
-    # print(np.shape(s))
-    # print(np.shape(v))
-    # print(np.shape(C))
+    print(approx0.shape)
 
     return [Wapprox, Wmono, num_colors, even]

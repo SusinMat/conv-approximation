@@ -16,17 +16,17 @@ function [Wapprox, Wmono, colors, perm, num_weights] = monochromatic_approx(W, a
     % Simple re-parametrization of first layer with monochromatic filters
     for f = 1 : size(W,1)
         [u,s,v]=svd(squeeze(W(f,:,:)),0);
+	% printf('%s\n', mat2str(size(v)));
 	% printf('%s\n', mat2str(size(squeeze(W(f,:,:)))));
         C(f, :) = u(:, 1);
-	% printf('%s\n', mat2str(size(u(:, 1))));
+	% printf('%s\n', mat2str(size(s(1, 1))));
         S(f, :) = s(1, 1) * v(:, 1); 
-	% printf('%s\n', mat2str(size(v)));
         chunk = u(:, 1) * s(1, 1) * v(:, 1)'; % ????
-	printf('%s\n', mat2str(size(chunk)));
+	% printf('%s\n', mat2str(size(chunk)));
         approx0(f, :, :, :) = reshape(chunk, 1, size(W, 2), size(W, 3), size(W, 4));
     end
     % printf('%s\n', mat2str(size(S)));
-    % printf('%s\n', mat2str(size(approx0)));
+    printf('%s\n', mat2str(size(approx0)));
 
     if args.even
         [assignment,colors] = litekmeans(C', args.num_colors);
