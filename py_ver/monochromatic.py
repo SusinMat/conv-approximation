@@ -18,7 +18,7 @@ from scipy.cluster.vq import kmeans2, whiten
 # args.num_colors : number of clusters (or "colors") to use
 
 def monochromatic_approx(W, args):
-    W = np.transpose(W, [0, 3, 1, 2])
+    W.transpose([0, 3, 1, 2])
     num_colors = args["num_colors"]
     even = args["even"]
     even = False # litekmeans not implemented yet
@@ -27,6 +27,7 @@ def monochromatic_approx(W, args):
     C = []
     S = []
     approx0 = []
+
     for f in range(0, np.shape(W)[0]):
         folded_filter = np.squeeze(W[f, :, :]).reshape((W.shape[1], -1))
         (u, s, v) = la.svd(folded_filter, full_matrices=False)
@@ -42,14 +43,18 @@ def monochromatic_approx(W, args):
     print(approx0.shape)
     print(C.shape)
 
+    C = whiten(C)
+
     if even:
         None # implement litekmeans
     else:
         max_iter = 1000
-        (codebook, label) = kmeans2(C, num_colors, minit="points",iter=max_iter)
+        (codebook, label) = kmeans2(C, num_colors, minit="points", iter=max_iter)
+
     print(codebook)
     print(label)
 
     Wapprox = np.zeros(W.shape)
+    Wapprox = Wapprox.transpose([0, 2, 3, 1])
 
     return [Wapprox, Wmono, num_colors, even]
