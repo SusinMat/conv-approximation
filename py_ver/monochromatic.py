@@ -2,7 +2,7 @@
 
 import numpy as np
 from numpy import linalg as la
-from scipy.cluster.vq import kmeans
+from scipy.cluster.vq import kmeans2, whiten
 
 
 # This approximation clusters the first left singular vectors of each of
@@ -46,8 +46,9 @@ def monochromatic_approx(W, args):
         None # implement litekmeans
     else:
         max_iter = 1000
-        (codebook, distortion) = kmeans(C, num_colors, iter=max_iter)
+        (codebook, label) = kmeans2(C, num_colors, minit="points",iter=max_iter)
     print(codebook)
+    print(label)
 
     Wapprox = np.zeros(W.shape)
 
