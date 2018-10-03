@@ -12,21 +12,25 @@ function [Wapprox, Wmono, colors, perm, num_weights] = monochromatic_approx(W, a
 % args.num_colors : number of clusters (or "colors") to use
 
 
+    printf('W before permutation: %s\n', mat2str(size(W)));
     W = permute(W, [1, 4, 2, 3]);
+    printf('W after permutation: %s\n', mat2str(size(W)));
     % Simple re-parametrization of first layer with monochromatic filters
-    for f = 1 : size(W,1)
-        [u,s,v]=svd(squeeze(W(f,:,:)),0);
-	% printf('%s\n', mat2str(size(v)));
-	% printf('%s\n', mat2str(size(squeeze(W(f,:,:)))));
+    for f = 1 : size(W, 1)
+	printf('\n---- Iteration f == %d\n', f);
+	printf('squeeze(W(f,:,:))--%s\n', mat2str(size(squeeze(W(f,:,:)))));
+        [u,s,v] = svd(squeeze(W(f,:,:)),0);
+	printf('u--%s s--%s v--%s\n', mat2str(size(u)), mat2str(size(s)), mat2str(size(v)));
         C(f, :) = u(:, 1);
-	% printf('%s\n', mat2str(size(s(1, 1))));
-        S(f, :) = s(1, 1) * v(:, 1); 
+	printf('u(:, 1)--%s\n', mat2str(size(u(:, 1))));
+        S(f, :) = s(1, 1) * v(:, 1);
+	printf('s(1, 1)--%s * v(:, 1)--%s == %s\n', mat2str(size(s(1, 1))), mat2str(size(v(:, 1))), mat2str(size(s(1, 1) * v(:, 1))));
         chunk = u(:, 1) * s(1, 1) * v(:, 1)'; % ????
-	% printf('%s\n', mat2str(size(chunk)));
+	printf('chunk == u(:, 1)--%s * s(1, 1)--%s * v(:, 1)t--%s == %s\n', mat2str(size(u(:, 1))), mat2str(size(s(1, 1))), mat2str(size(v(:, 1)')), mat2str(size(u(:, 1) * s(1, 1) * v(:, 1)')));
         approx0(f, :, :, :) = reshape(chunk, 1, size(W, 2), size(W, 3), size(W, 4));
+        printf('approx0(f)--%s\n', mat2str(size(approx0)));
     end
     % printf('%s\n', mat2str(size(S)));
-    printf('%s\n', mat2str(size(approx0)));
     printf('%s\n', mat2str(size(C)));
 
     if args.even

@@ -33,7 +33,7 @@ def monochromatic_approx(W, args):
         s = np.diag(s)
         vt = v.transpose()
         C.append(u[:, 0, np.newaxis].squeeze())
-        S.append(s[0, 0, np.newaxis, np.newaxis] * vt[:, 0, np.newaxis].squeeze())
+        S.append(s[0, np.newaxis, 0, np.newaxis] * vt[:, 0, np.newaxis].squeeze())
         chunk = u[:, 0, np.newaxis] * s[0, 0, np.newaxis, np.newaxis] * v[0, np.newaxis, :]
         approx0.append(chunk.reshape(W.shape[1], W.shape[2], W.shape[3]))
     C = np.asarray(C)
@@ -48,5 +48,7 @@ def monochromatic_approx(W, args):
         max_iter = 1000
         (codebook, distortion) = kmeans(C, num_colors, iter=max_iter)
     print(codebook)
+
+    Wapprox = np.zeros(W.shape)
 
     return [Wapprox, Wmono, num_colors, even]
