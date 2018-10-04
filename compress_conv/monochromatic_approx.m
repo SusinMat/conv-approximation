@@ -49,9 +49,11 @@ function [Wapprox, Wmono, colors, perm, num_weights] = monochromatic_approx(W, a
         [assignment,colors] = litekmeans(C', args.num_colors);
         colors = colors';
     else
+        pkg('load', 'statistics')
         MAXiter = 1000; % Maximum iteration for KMeans Algorithm
-        REPlic = Val(args, 'rep', 100); % Replication for KMeans Algorithm
-        [assignment,colors] = kmeans(C, args.num_colors, 'start', 'sample', 'maxiter', MAXiter, 'replicates', REPlic, 'EmptyAction', 'singleton');
+        % REPlic = Val(args, 'rep', 100); % Replication for KMeans Algorithm
+        % [assignment,colors] = kmeans(C, args.num_colors, 'start', 'sample', 'maxiter', MAXiter, 'replicates', REPlic, 'EmptyAction', 'singleton');
+        [assignment,colors] = kmeans(C, args.num_colors, 'start', 'sample', 'maxiter', MAXiter, 'EmptyAction', 'singleton');
     end
     printf('C--%s\n', mat2str(size(C)));
     printf('assignment--%s colors--%s\n', mat2str(size(assignment)), mat2str(size(colors)));
