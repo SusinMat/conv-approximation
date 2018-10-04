@@ -1,4 +1,4 @@
-W = randn(96, 7, 7, 3);  % make random weights with 3 input color channels, 96 output channelsand 7x7 filters
+W = abs(randn(96, 7, 7, 3));  % make random weights with 3 input color channels, 96 output channelsand 7x7 filters
 
 % Compute approximation
 fprintf('||W|| = %f \n', norm(W(:)));
