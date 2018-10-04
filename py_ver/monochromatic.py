@@ -17,11 +17,9 @@ from scipy.cluster.vq import kmeans2, whiten
 #             False otherwise
 # args.num_colors : number of clusters (or "colors") to use
 
-def monochromatic_approx(W, args):
+def monochromatic_approx(W, num_colors=6, even=False):
     W = W.transpose([0, 3, 1, 2])
     print("W after permutation == %s" %(str(W.shape)))
-    num_colors = args["num_colors"]
-    even = args["even"]
     even = False # litekmeans not implemented yet
     Wmono = W
     C = []
