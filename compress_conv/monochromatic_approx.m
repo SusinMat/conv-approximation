@@ -17,18 +17,30 @@ function [Wapprox, Wmono, colors, perm, num_weights] = monochromatic_approx(W, a
     printf('W after permutation: %s\n', mat2str(size(W)));
     % Simple re-parametrization of first layer with monochromatic filters
     for f = 1 : size(W, 1)
-	printf('\n---- Iteration f == %d\n', f);
-	printf('squeeze(W(f,:,:))--%s\n', mat2str(size(squeeze(W(f,:,:)))));
+	% printf('\n---- Iteration f == %d\n', f);
+	if f == 1
+	    printf('squeeze(W(f,:,:))--%s\n', mat2str(size(squeeze(W(f,:,:)))));
+	end
         [u,s,v] = svd(squeeze(W(f,:,:)),0);
-	printf('u--%s s--%s v--%s\n', mat2str(size(u)), mat2str(size(s)), mat2str(size(v)));
+	if f == 1
+	    printf('u--%s s--%s v--%s\n', mat2str(size(u)), mat2str(size(s)), mat2str(size(v)));
+	end
         C(f, :) = u(:, 1);
-	printf('u(:, 1)--%s\n', mat2str(size(u(:, 1))));
+	if f == 1
+	    printf('u(:, 1)--%s\n', mat2str(size(u(:, 1))));
+	end
         S(f, :) = s(1, 1) * v(:, 1);
-	printf('s(1, 1)--%s * v(:, 1)--%s == %s\n', mat2str(size(s(1, 1))), mat2str(size(v(:, 1))), mat2str(size(s(1, 1) * v(:, 1))));
+	if f == 1
+	    printf('s(1, 1)--%s * v(:, 1)--%s == %s\n', mat2str(size(s(1, 1))), mat2str(size(v(:, 1))), mat2str(size(s(1, 1) * v(:, 1))));
+	end
         chunk = u(:, 1) * s(1, 1) * v(:, 1)'; % ????
-	printf('chunk == u(:, 1)--%s * s(1, 1)--%s * v(:, 1)t--%s == %s\n', mat2str(size(u(:, 1))), mat2str(size(s(1, 1))), mat2str(size(v(:, 1)')), mat2str(size(u(:, 1) * s(1, 1) * v(:, 1)')));
+	if f == 1
+	    printf('chunk == u(:, 1)--%s * s(1, 1)--%s * v(:, 1)t--%s == %s\n', mat2str(size(u(:, 1))), mat2str(size(s(1, 1))), mat2str(size(v(:, 1)')), mat2str(size(u(:, 1) * s(1, 1) * v(:, 1)')));
+	end
         approx0(f, :, :, :) = reshape(chunk, 1, size(W, 2), size(W, 3), size(W, 4));
-        printf('approx0(f)--%s\n', mat2str(size(approx0)));
+	if f == 1
+            printf('approx0(f)--%s\n', mat2str(size(approx0)));
+	end
     end
     % printf('%s\n', mat2str(size(S)));
     printf('%s\n', mat2str(size(C)));
@@ -41,10 +53,15 @@ function [Wapprox, Wmono, colors, perm, num_weights] = monochromatic_approx(W, a
         REPlic = Val(args, 'rep', 100); % Replication for KMeans Algorithm
         [assignment,colors] = kmeans(C, args.num_colors, 'start', 'sample', 'maxiter', MAXiter, 'replicates', REPlic, 'EmptyAction', 'singleton');
     end
-    
+    printf('C--%s\n', mat2str(size(C)));
+    printf('assignment--%s colors--%s\n', mat2str(size(assignment)), mat2str(size(colors)));
+
     Wapprox = zeros(size(W));
     for f=1:size(W,1)
         chunk = (colors(assignment(f),:)') * (S(f,:));
+        if f == 1
+            printf('colors(assignment(f),:)t--%s * S(f,:)--%s == %s\n', mat2str(size(colors(assignment(f),:)')), mat2str(size(S(f,:))), mat2str(size(chunk)));
+	end
         Wapprox(f,:,:,:)=reshape(chunk,1,size(W,2),size(W,3),size(W,4));
     end 
     

@@ -18,7 +18,8 @@ from scipy.cluster.vq import kmeans2, whiten
 # args.num_colors : number of clusters (or "colors") to use
 
 def monochromatic_approx(W, args):
-    W.transpose([0, 3, 1, 2])
+    W = W.transpose([0, 3, 1, 2])
+    print("W--%s" %(str(W.shape)))
     num_colors = args["num_colors"]
     even = args["even"]
     even = False # litekmeans not implemented yet
@@ -30,7 +31,11 @@ def monochromatic_approx(W, args):
 
     for f in range(0, np.shape(W)[0]):
         folded_filter = np.squeeze(W[f, :, :]).reshape((W.shape[1], -1))
+        if f == 0:
+            print("folded_filter--%s" % (str(folded_filter.shape)))
         (u, s, v) = la.svd(folded_filter, full_matrices=False)
+        if f == 0:
+            print("u--%s s--%s v--%s" % (str(u.shape), str(s.shape), str(v.shape)))
         s = np.diag(s)
         vt = v.transpose()
         C.append(u[:, 0, np.newaxis].squeeze())
@@ -40,8 +45,6 @@ def monochromatic_approx(W, args):
     C = np.asarray(C)
     S = np.asarray(S)
     approx0 = np.asarray(approx0)
-    print(approx0.shape)
-    print(C.shape)
 
     C = whiten(C)
 
@@ -49,12 +52,21 @@ def monochromatic_approx(W, args):
         None # implement litekmeans
     else:
         max_iter = 1000
-        (codebook, label) = kmeans2(C, num_colors, minit="points", iter=max_iter)
-
-    print(codebook)
-    print(label)
+        (colors, assignment) = kmeans2(C, num_colors, minit="points", iter=max_iter)
 
     Wapprox = np.zeros(W.shape)
+
+    assignment = assignment.reshape((assignment.size, 1))
+    print("C--" + str(C.shape))
+    print("assignment--%s colors--%s" % (str(assignment.shape), str(colors.shape)))
+
+    for f in range(0, np.shape(W)[0]):
+        if f == 0:
+            print("colors[assignment[f]].transpose()--%s * S[f]--%s" % (str(colors[assignment[f]].transpose().shape), str(S[f].shape)))
+        chunk = colors[assignment[f]].transpose() * S[f]
+        if f == 0:
+            print("chunk--%s" % (str(chunk.shape)))
+
     Wapprox = Wapprox.transpose([0, 2, 3, 1])
 
     return [Wapprox, Wmono, num_colors, even]
