@@ -78,5 +78,6 @@ function [Wapprox, Wmono, colors, perm, num_weights] = monochromatic_approx(W, a
     colors = colors';
     
     num_weights = prod(size(colors)) + prod(size(Wmono));
+    printf('num_weights == %d\n', num_weights);
 end
 
