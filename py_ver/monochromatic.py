@@ -43,7 +43,7 @@ def monochromatic_approx(W, num_colors=6, even=False):
     S = np.asarray(S)
     approx0 = np.asarray(approx0)
 
-    C = whiten(C)
+    # C = whiten(C)
 
     if even:
         None # implement litekmeans
