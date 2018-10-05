@@ -42,8 +42,9 @@ function [Wapprox, Wmono, colors, perm, num_weights] = monochromatic_approx(W, a
             printf('approx0(f)--%s\n', mat2str(size(approx0)));
 	end
     end
-    % printf('%s\n', mat2str(size(S)));
-    printf('%s\n', mat2str(size(C)));
+
+    printf('C--%s\n', mat2str(size(C)));
+    printf('S--%s\n', mat2str(size(S)));
 
     if args.even
         [assignment,colors] = litekmeans(C', args.num_colors);
@@ -55,7 +56,7 @@ function [Wapprox, Wmono, colors, perm, num_weights] = monochromatic_approx(W, a
         % [assignment,colors] = kmeans(C, args.num_colors, 'start', 'sample', 'maxiter', MAXiter, 'replicates', REPlic, 'EmptyAction', 'singleton');
         [assignment,colors] = kmeans(C, args.num_colors, 'start', 'sample', 'maxiter', MAXiter, 'EmptyAction', 'singleton');
     end
-    printf('C--%s\n', mat2str(size(C)));
+
     printf('assignment--%s colors--%s\n', mat2str(size(assignment)), mat2str(size(colors)));
 
     Wapprox = zeros(size(W));
