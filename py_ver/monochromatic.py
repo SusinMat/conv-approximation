@@ -19,7 +19,7 @@ from scipy.cluster.vq import kmeans2, whiten
 
 def monochromatic_approx(W, num_colors=6, even=False):
     W = W.transpose([0, 3, 1, 2])
-    print("W after permutation == %s" %(str(W.shape)))
+    print("W after permutation == %s" % (str(W.shape)))
     even = False # litekmeans not implemented yet
     Wmono = W
     C = []
@@ -30,14 +30,14 @@ def monochromatic_approx(W, num_colors=6, even=False):
         folded_filter = np.squeeze(W[f, :, :]).reshape((W.shape[1], -1))
         if f == 0:
             print("folded_filter--%s" % (str(folded_filter.shape)))
-        (u, s, v) = la.svd(folded_filter, full_matrices=False)
+        (u, s, vt) = la.svd(folded_filter, full_matrices=False)
         if f == 0:
-            print("u--%s s--%s vt--%s" % (str(u.shape), str(s.shape), str(v.shape)))
+            print("u--%s s--%s vt--%s" % (str(u.shape), str(s.shape), str(vt.shape)))
         s = np.diag(s)
-        vt = v.transpose()
+        v = vt.transpose()
         C.append(u[:, 0, np.newaxis].squeeze())
-        S.append(s[0, np.newaxis, 0, np.newaxis] * vt[:, 0, np.newaxis].squeeze())
-        chunk = u[:, 0, np.newaxis] * s[0, 0, np.newaxis, np.newaxis] * v[0, np.newaxis, :]
+        S.append(s[0, np.newaxis, 0, np.newaxis] * v[:, 0, np.newaxis].squeeze())
+        chunk = u[:, 0, np.newaxis] * s[0, 0, np.newaxis, np.newaxis] * vt[0, np.newaxis, :]
         approx0.append(chunk.reshape(W.shape[1], W.shape[2], W.shape[3]))
     C = np.asarray(C)
     S = np.asarray(S)
