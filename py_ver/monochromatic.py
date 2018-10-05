@@ -27,7 +27,7 @@ def monochromatic_approx(W, num_colors=6, even=False):
     approx0 = []
 
     for f in range(0, np.shape(W)[0]):
-        folded_filter = W[f, :, :].reshape((W.shape[1], -1))
+        folded_filter = W[f].reshape((W.shape[1], -1))
         if f == 0:
             print("folded_filter--%s" % (str(folded_filter.shape)))
         (u, s, vt) = la.svd(folded_filter, full_matrices=False)
