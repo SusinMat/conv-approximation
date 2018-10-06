@@ -64,7 +64,8 @@ def monochromatic_approx(W, num_colors=6, even=False):
     for f in range(0, np.shape(W)[0]):
         if f == 0:
             print("colors[assignment[f]].transpose()--%s * S[f]--%s" % (str(colors[assignment[f]].transpose().shape), str(S[f].shape)))
-        chunk = colors[assignment[f]].transpose() * S[f]
+        chunk = colors[assignment[f]].transpose() * S[f] # Multiply the centroid to which filter f was assigned by the first eigenvalue multiplied by v[:, 0, np.newaxis]
+        # Note that the centroid came from u[:, 0]
         if f == 0:
             print("chunk--%s" % (str(chunk.shape)))
         Wapprox.append(chunk.reshape(W.shape[1], W.shape[2], W.shape[3])) # [height, width, channels]
