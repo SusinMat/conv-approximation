@@ -68,6 +68,7 @@ for m=1:M
     taille(m)=length(find(out==m));
 end
 [hmany,nextclust]=max(taille);
+printf('nextclust == %d\n', nextclust);
 
 visited=zeros(1,M);
 
@@ -82,33 +83,33 @@ while go
     for l=1:length(aux)
         slice(l) = ds(aux(l),choices(aux(l))+1)-ds(aux(l),choices(aux(l)));
     end
-    [~,tempo]=sort(slice,'descend');
+    [~,tempo] = sort(slice,'descend');
     clear slice;
     %slice=w(aux,nextclust);
     %[~,tempo]=sort(slice,'ascend');
     
-    saved=aux(tempo(1:K));
-    out(saved)=nextclust;
+    saved = aux(tempo(1:K));
+    out(saved) = nextclust;
 
     visited(nextclust)=1;
-    for k=K+1:length(tempo)
-       i=2;
+    for k = K+1:length(tempo)
+       i = 2;
        while visited(I(aux(tempo(k)),i)) 
-          i=i+1;
+          i = i+1;
        end
-       out(aux(tempo(k)))=I(aux(tempo(k)),i);
-       choices(aux(tempo(k)))=i;
+       out(aux(tempo(k))) = I(aux(tempo(k)),i);
+       choices(aux(tempo(k))) = i;
     end
-    for m=1:M
-        taille(m)=length(find(out==m));
+    for m = 1:M
+        taille(m) = length(find(out==m));
     end
-    [hmany,nextclust]=max(taille);
+    [hmany,nextclust] = max(taille);
     go=(hmany > K);
 end
 
 ener=0;
-for n=1:N
-ener=ener+w(n,out(n));
+for n = 1:N
+    ener=ener+w(n,out(n));
 end
 
 end

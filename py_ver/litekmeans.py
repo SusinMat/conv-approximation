@@ -27,21 +27,48 @@ def constrained_assignment(X, C, K):
     ds = sort(w, axis=1)
     I = argsort(w, axis=1)
 
-    out = I[:, 0, np.newaxis]
+    # out = I[:, 0, np.newaxis]
+    out = I[:, 0]
     
     taille = []
 
     for m in range(M):
-        taille.append(len([i for i in range(out) if out[i, 0] == m]))
+        taille.append(len([i for i in range(out) if out[0] == m]))
 
     taille = np.asarray(taille)
 
-    hmany, nextclust = (np.max(taille), np.argmax(taille))
+    hmany, nextclust = (np.max(taille), np.argmax(taille)[0]) # Note: nextclust should be an index, not a list
 
     choices = np.ones((N, 1))
 
+    visited = [False for i in range(len(out))]
+
     while hmany > K:
-        aux = [x for x in nextclust if x == out]
+        # aux = [x for x in nextclust if x in out]
+        aux = np.where(out == nextclust)
+        slice_ = []
+        for a in aux:
+            slice_.append(ds[a, choices[a] + 1 - ds[a, choices[a]]])
+        slice_ = np.asarray(slice_)
+        tempo = np.argsort(-slice_)
+
+        saved = aux[tempo[0 : K]]
+        out[saved] = nextclust
+
+        visited[nextclust] = True
+        for k in range(K + 1, tempo.size):
+            i = 1
+            while visited[I[aux[tempo[k]], i]]:
+                i += 1
+            out[aux[tempo[k]]] = I[aux[tempo[k]], i]
+            choices[aux[tempo[k]]] = i
+        for m in range(len(M)):
+            taille[m] = len(np.where(out == m))
+        hmany, nextclust = (np.max(taille), np.argmax(taille)[0]) # Note: nextclust should be an index, not a list
+
+    ener = 0
+    for n in range(len(N)):
+        ener += w[n, out[n]]
 
     return [out, ener]
 
