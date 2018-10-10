@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from litekmeans_module import litekmeans
 import numpy as np
 from numpy import linalg as la
 from scipy.cluster.vq import kmeans2, whiten
@@ -20,7 +21,6 @@ from scipy.cluster.vq import kmeans2, whiten
 def monochromatic_approx(W, num_colors=6, even=False):
     W = W.transpose([0, 3, 1, 2]) # [filters, channels, height, width]
     print("W after permutation == %s" % (str(W.shape)))
-    even = False # litekmeans not implemented yet
     C = []
     S = []
     approx0 = []
@@ -47,7 +47,9 @@ def monochromatic_approx(W, num_colors=6, even=False):
     # C = whiten(C)
 
     if even:
-        None # Implement litekmeans. Note that it must 'constrain  to be ofclusters must equal sizes'
+        # Use litekmeans. Note that it must 'constrain clusters to be of equal sizes'
+        (assignment, colors) = litekmeans(C.transpose(), num_colors)
+        colors = colors.transpose()
     else:
         max_iter = 1000
         (colors, assignment) = kmeans2(C, num_colors, minit="points", iter=max_iter)

@@ -20,20 +20,19 @@ for j=1:outiters
     aux=randperm(n);
     m = X(:,aux(1:k));
     %[~,label] = max(bsxfun(@minus,m'*X,dot(m,m,1)'/2),[],1); % assign samples to the nearest centers
-    [label] = constrained_assignment(X, m,n/k);
+    [label] = constrained_assignment(X, m, n/k);
 
     iters=0;
 
-
     while any(label ~= last) && iters < maxiters
-        [u,~,label] = unique(label);   % remove empty clusters
+        [u, ~, label] = unique(label);   % remove empty clusters
         k = length(u);
-        E = sparse(1:n,label,1,n,k,n);  % transform label into indicator matrix
-        m = X*full(E*spdiags(1./sum(E,1)',0,k,k));    % compute m of each cluster
+        E = sparse(1 : n, label, 1, n, k, n);  % transform label into indicator matrix
+        m = X * full(E * spdiags(1 ./ sum(E, 1)', 0, k, k));    % compute m of each cluster
         last = label;
         %[~,label] = max(bsxfun(@minus,m'*X,dot(m,m,1)'/2),[],1); % assign samples to the nearest centers
-        [label,ener] = constrained_assignment(X, m,n/k);
-        iters = iters +1 ;                
+        [label, ener] = constrained_assignment(X, m, n / k);
+        iters = iters + 1;
     end
     
     [~,~,label] = unique(label);            
@@ -44,9 +43,7 @@ for j=1:outiters
         minener = ener;
     end            
 
-
 end
-
 
 end
 

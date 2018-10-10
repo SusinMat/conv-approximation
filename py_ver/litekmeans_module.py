@@ -72,9 +72,31 @@ def constrained_assignment(X, C, K):
 
     return [out, ener]
 
-def litekmeans(X, num_colors):
+def litekmeans(X, k):
     outlabel = []
     outm = []
+
+    n = X.shape[1]
+    last = 0
+
+    minener = 1e+20
+    outiters = 30
+    maxiters = 1000
+    last = None
+
+    for j in range(outiters):
+        print("Iter %d / %d\n" % (j, outiters))
+        aux = np.random.permutation(n)
+        m = X[:, aux[0 : k]]
+        (label, _) = constrained_assignment(X, m, n / k)
+        (u, label) = np.unique(label, return_index=True, return_inverse=True) # remove empty clusters
+
+        for iters in range(max(maxiters)):
+            if last != None and last not in label:
+                break
+            None
+            np.unique(label, )
+        
     return [outlabel, outm]
 
 if __name__ == "__main__":
