@@ -11,7 +11,9 @@
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHA    LL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTER    RUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
+import ast
 import enum
+import numpy as np
 import os
 import re
 import sys
@@ -41,16 +43,19 @@ if __name__ == "__main__":
     dump = [line for line in [line.strip() for line in f.readlines()] if line != "" ]
     f.close()
 
+    common_info_pattern = r"\* (?P<index>\d+):s=(?P<shape>\[\d+(, \d+){0,3}\]),t=(?P<data_type>\w+)"
+
     start_pattern = re.compile(r"Operators:")
-    op_pattern = re.compile(r"index: \d+, builtin_op: \w+, inputs: |( \d+)*, outputs: |( \d+)*")
+    op_pattern = re.compile(r"index: (?P<index>\d+), builtin_op: (?P<op_name>\w+), inputs:(?P<inputs>( \d+)+| ), outputs:(?P<outputs>( \d+)+| )$")
     input_header_pattern = re.compile(r"\+ input tensors:")
-    input_info_pattern = re.compile(r"\* \d+:s=\[\d+(, \d+){0,3}\],t=\w+,d=")
-    tensor_data_pattern = re.compile(r".+")
+    input_info_pattern = re.compile(common_info_pattern + r",d=$")
+    tensor_data_pattern = re.compile(r"(?P<data>.+)$")
     output_header_pattern = re.compile(r"\+ output tensors:")
-    output_info_pattern = re.compile(r"\* \d+:s=\[\d+(, \d+){0,3}\],t=\w+")
+    output_info_pattern = re.compile(common_info_pattern + r"$")
 
     state = State.START
     i = 0
+    shape = None
     while(i < len(dump)):
         line = dump[i]
         redo = False
@@ -68,6 +73,11 @@ if __name__ == "__main__":
                 print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
                 exit(1)
             state = State.INPUT_HEADER
+            index = match.group("index")
+            index = int(index)
+            op_name = match.group("op_name")
+            inputs = match.group("inputs").strip().split(" ")
+            outputs = match.group("outputs").strip().split(" ")
 
         elif state == State.INPUT_HEADER:
             match = input_header_pattern.match(line)
@@ -80,6 +90,11 @@ if __name__ == "__main__":
             match = input_info_pattern.match(line)
             if match != None: # matched input info
                 state = State.TENSOR_DATA
+                index = match.group("index")
+                index = int(index)
+                shape = match.group("shape")
+                shape = ast.literal_eval(shape)
+                data_type = match.group("data_type")
             else:
                 state = State.OUTPUT_HEADER
                 match = output_header_pattern.match(line)
@@ -93,6 +108,12 @@ if __name__ == "__main__":
             if match == None:
                 print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
                 exit(1)
+            data = match.group("data")
+            if data.startswith("Empty"):
+                data = []
+            else:
+                data = ast.literal_eval(data)
+            data = np.asarray(data)
             state = State.INPUT_INFO
 
         elif state == State.OUTPUT_HEADER:
@@ -106,6 +127,11 @@ if __name__ == "__main__":
             match = output_info_pattern.match(line)
             if match != None: # matched output info
                 state = State.OUTPUT_INFO
+                index = match.group("index")
+                index = int(index)
+                shape = match.group("shape")
+                shape = ast.literal_eval(shape)
+                data_type = match.group("data_type")
             else:
                 state = State.OP
                 match = op_pattern.match(line)
@@ -116,19 +142,3 @@ if __name__ == "__main__":
 
         if not redo:
             i += 1
-    
-#     pattern = re.compile(r"(?P<name>[^\s]+)\s+" +
-#             r"\((?P<model>[^\s]+)\)\s+" +
-#             r"is available\.?")
-#     for line in check_output:
-#         match = pattern.match(line)
-#         if match != None:
-#             if model == match.group("model"):
-#                 name = match.group("name")
-#                 if name in exclude_list:
-#                     continue
-#                 elif len(force_list) > 0 and name not in force_list:
-#                     continue
-#                 else:
-#                     available = name
-#                 break
