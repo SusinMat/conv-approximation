@@ -22,10 +22,10 @@ class State(enum.Enum):
     START = enum.auto()
     OP = enum.auto()
     INPUT_HEADER = enum.auto()
-    INPUT_TENSOR_INFO = enum.auto()
+    INPUT_INFO = enum.auto()
     TENSOR_DATA = enum.auto()
     OUTPUT_HEADER = enum.auto()
-    OUTPUT_TENSOR_INFO = enum.auto()
+    OUTPUT_INFO = enum.auto()
 
 
 if __name__ == "__main__":
@@ -41,10 +41,81 @@ if __name__ == "__main__":
     dump = [line for line in [line.strip() for line in f.readlines()] if line != "" ]
     f.close()
 
-    s = State.START
-    while(True):
-        None
+    start_pattern = re.compile(r"Operators:")
+    op_pattern = re.compile(r"index: \d+, builtin_op: \w+, inputs: |( \d+)*, outputs: |( \d+)*")
+    input_header_pattern = re.compile(r"\+ input tensors:")
+    input_info_pattern = re.compile(r"\* \d+:s=\[\d+(, \d+){0,3}\],t=\w+,d=")
+    tensor_data_pattern = re.compile(r".+")
+    output_header_pattern = re.compile(r"\+ output tensors:")
+    output_info_pattern = re.compile(r"\* \d+:s=\[\d+(, \d+){0,3}\],t=\w+")
 
+    state = State.START
+    i = 0
+    while(i < len(dump)):
+        line = dump[i]
+        redo = False
+
+        if state == State.START:
+            match = start_pattern.match(line)
+            if match == None:
+                print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
+                exit(1)
+            state = state.OP
+
+        elif state == State.OP:
+            match = op_pattern.match(line)
+            if match == None:
+                print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
+                exit(1)
+            state = State.INPUT_HEADER
+
+        elif state == State.INPUT_HEADER:
+            match = input_header_pattern.match(line)
+            if match == None:
+                print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
+                exit(1)
+            state = State.INPUT_INFO
+
+        elif state == State.INPUT_INFO:
+            match = input_info_pattern.match(line)
+            if match != None: # matched input info
+                state = State.TENSOR_DATA
+            else:
+                state = State.OUTPUT_HEADER
+                match = output_header_pattern.match(line)
+                if match == None:
+                    print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
+                    exit(1)
+                redo = True
+
+        elif state == State.TENSOR_DATA:
+            match = tensor_data_pattern.match(line)
+            if match == None:
+                print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
+                exit(1)
+            state = State.INPUT_INFO
+
+        elif state == State.OUTPUT_HEADER:
+            match = output_header_pattern.match(line)
+            if match == None:
+                print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
+                exit(1)
+            state = State.OUTPUT_INFO
+
+        elif state == State.OUTPUT_INFO:
+            match = output_info_pattern.match(line)
+            if match != None: # matched output info
+                state = State.OUTPUT_INFO
+            else:
+                state = State.OP
+                match = op_pattern.match(line)
+                if match == None:
+                    print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
+                    exit(1)
+                redo = True
+
+        if not redo:
+            i += 1
     
 #     pattern = re.compile(r"(?P<name>[^\s]+)\s+" +
 #             r"\((?P<model>[^\s]+)\)\s+" +
@@ -61,4 +132,3 @@ if __name__ == "__main__":
 #                 else:
 #                     available = name
 #                 break
-
