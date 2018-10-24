@@ -194,4 +194,7 @@ if __name__ == "__main__":
         current_output_tensor = None
 
     op_names = [op.name for op in ops]
-    print(op_names)
+    op_inputs = [[tensor.index for tensor in op.inputs] for op in ops]
+    op_outputs = [[tensor.index for tensor in op.outputs] for op in ops]
+    for i in range(len(ops)):
+        print("Name: %s, inputs: %s, outputs: %s" % (op_names[i], str(op_inputs[i]), str(op_outputs[i])))
