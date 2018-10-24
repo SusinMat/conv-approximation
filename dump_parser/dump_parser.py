@@ -104,6 +104,11 @@ if __name__ == "__main__":
             index = match.group("index")
             index = int(index)
             op_name = match.group("op_name")
+            if op_name.endswith("Options"):
+                op_name = re.sub(r"Options$", "", op_name)
+            else:
+                print("Operator name " + op_name + "does not end with 'Options'")
+                exit(1)
             inputs = match.group("inputs").strip().split(" ")
             outputs = match.group("outputs").strip().split(" ")
             if current_op != None:
