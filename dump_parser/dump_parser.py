@@ -136,6 +136,9 @@ if __name__ == "__main__":
                 current_input_tensor.type_name = data_type
             else:
                 state = State.OUTPUT_HEADER
+                if current_input_tensor != None:
+                    current_op.inputs.append(current_input_tensor)
+                current_input_tensor = None
                 match = output_header_pattern.match(line)
                 if match == None:
                     print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
