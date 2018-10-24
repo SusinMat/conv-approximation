@@ -29,6 +29,29 @@ class State(enum.Enum):
     OUTPUT_HEADER = enum.auto()
     OUTPUT_INFO = enum.auto()
 
+class Tensor:
+    index = -1
+    shape = None
+    type_name = ""
+    data = None
+    def __init__(self):
+        self.index = -1
+        self.shape = None
+        self.type_name = ""
+        self.data = None
+
+class Op:
+    name = ""
+    index = -1
+    options = {}
+    inputs = []
+    outputs = []
+    def __init__(self):
+        self.name = ""
+        self.index = -1
+        self.options = {}
+        self.inputs = []
+        self.outputs = []
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parse the output of the Neural Network Transpiler (NNT) weight dump function.")
@@ -53,9 +76,14 @@ if __name__ == "__main__":
     output_header_pattern = re.compile(r"\+ output tensors:")
     output_info_pattern = re.compile(common_info_pattern + r"$")
 
+    ops = []
+
     state = State.START
     i = 0
     shape = None
+    current_op = None
+    current_input_tensor = None
+    current_output_tensor = None
     while(i < len(dump)):
         line = dump[i]
         redo = False
@@ -78,6 +106,11 @@ if __name__ == "__main__":
             op_name = match.group("op_name")
             inputs = match.group("inputs").strip().split(" ")
             outputs = match.group("outputs").strip().split(" ")
+            if current_op != None:
+                ops.append(current_op)
+            current_op = Op()
+            current_op.name = op_name
+            current_op.index = index
 
         elif state == State.INPUT_HEADER:
             match = input_header_pattern.match(line)
@@ -95,6 +128,12 @@ if __name__ == "__main__":
                 shape = match.group("shape")
                 shape = ast.literal_eval(shape)
                 data_type = match.group("data_type")
+                if current_input_tensor != None:
+                    current_op.inputs.append(current_input_tensor)
+                current_input_tensor = Tensor()
+                current_input_tensor.index = index
+                current_input_tensor.shape = shape
+                current_input_tensor.type_name = data_type
             else:
                 state = State.OUTPUT_HEADER
                 match = output_header_pattern.match(line)
@@ -110,10 +149,11 @@ if __name__ == "__main__":
                 exit(1)
             data = match.group("data")
             if data.startswith("Empty"):
-                data = []
+                data = None
             else:
                 data = ast.literal_eval(data)
-            data = np.asarray(data)
+                data = np.asarray(data)
+            current_input_tensor.data = data
             state = State.INPUT_INFO
 
         elif state == State.OUTPUT_HEADER:
@@ -132,6 +172,11 @@ if __name__ == "__main__":
                 shape = match.group("shape")
                 shape = ast.literal_eval(shape)
                 data_type = match.group("data_type")
+                current_output_tensor = Tensor()
+                current_output_tensor.index = index
+                current_output_tensor.shape = shape
+                current_output_tensor.type_name = data_type
+                current_op.outputs.append(current_output_tensor)
             else:
                 state = State.OP
                 match = op_pattern.match(line)
@@ -142,3 +187,11 @@ if __name__ == "__main__":
 
         if not redo:
             i += 1
+    if current_op != None:
+        ops.append(current_op)
+        current_op = None
+        current_input_tensor = None
+        current_output_tensor = None
+
+    op_names = [op.name for op in ops]
+    print(op_names)
