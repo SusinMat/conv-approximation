@@ -69,7 +69,7 @@ if __name__ == "__main__":
     common_info_pattern = r"\* (?P<index>\d+):s=(?P<shape>\[\d+(, \d+){0,3}\]),t=(?P<data_type>\w+)"
 
     start_pattern = re.compile(r"Operators:")
-    op_pattern = re.compile(r"index: (?P<index>\d+), builtin_op: (?P<op_name>\w+), inputs:(?P<inputs>( \d+)+| ), outputs:(?P<outputs>( \d+)+| )$")
+    op_pattern = re.compile(r"index: (?P<index>\d+), builtin_op: (?P<op_name>\w+), options: (?P<options>{ [\w\.=\[\],\s]*}), inputs:(?P<inputs>( \d+)+| ), outputs:(?P<outputs>( \d+)+| )$")
     input_header_pattern = re.compile(r"\+ input tensors:")
     input_info_pattern = re.compile(common_info_pattern + r",d=$")
     tensor_data_pattern = re.compile(r"(?P<data>.+)$")
