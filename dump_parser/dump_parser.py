@@ -91,14 +91,14 @@ if __name__ == "__main__":
         if state == State.START:
             match = start_pattern.match(line)
             if match == None:
-                print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
+                print("Line: '\n" + line[:min(len(line), 160)] + "\n' did not match pattern for state " + str(state))
                 exit(1)
             state = state.OP
 
         elif state == State.OP:
             match = op_pattern.match(line)
             if match == None:
-                print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
+                print("Line: '\n" + line[:min(len(line), 160)] + "\n' did not match pattern for state " + str(state))
                 exit(1)
             state = State.INPUT_HEADER
             index = match.group("index")
@@ -109,6 +109,7 @@ if __name__ == "__main__":
             else:
                 print("Operator name " + op_name + "does not end with 'Options'")
                 exit(1)
+            options = match.group("options").strip()
             inputs = match.group("inputs").strip().split(" ")
             outputs = match.group("outputs").strip().split(" ")
             if current_op != None:
@@ -116,11 +117,12 @@ if __name__ == "__main__":
             current_op = Op()
             current_op.name = op_name
             current_op.index = index
+            current_op.options = options
 
         elif state == State.INPUT_HEADER:
             match = input_header_pattern.match(line)
             if match == None:
-                print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
+                print("Line: '\n" + line[:min(len(line), 160)] + "\n' did not match pattern for state " + str(state))
                 exit(1)
             state = State.INPUT_INFO
 
@@ -146,14 +148,14 @@ if __name__ == "__main__":
                 current_input_tensor = None
                 match = output_header_pattern.match(line)
                 if match == None:
-                    print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
+                    print("Line: '\n" + line[:min(len(line), 160)] + "\n' did not match pattern for state " + str(state))
                     exit(1)
                 redo = True
 
         elif state == State.TENSOR_DATA:
             match = tensor_data_pattern.match(line)
             if match == None:
-                print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
+                print("Line: '\n" + line[:min(len(line), 160)] + "\n' did not match pattern for state " + str(state))
                 exit(1)
             data = match.group("data")
             if data.startswith("Empty"):
@@ -167,7 +169,7 @@ if __name__ == "__main__":
         elif state == State.OUTPUT_HEADER:
             match = output_header_pattern.match(line)
             if match == None:
-                print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
+                print("Line: '\n" + line[:min(len(line), 160)] + "\n' did not match pattern for state " + str(state))
                 exit(1)
             state = State.OUTPUT_INFO
 
@@ -189,7 +191,7 @@ if __name__ == "__main__":
                 state = State.OP
                 match = op_pattern.match(line)
                 if match == None:
-                    print("Line: '\n" + line[:min(len(line), 80)] + "\n' did not match pattern for state " + str(state))
+                    print("Line: '\n" + line[:min(len(line), 160)] + "\n' did not match pattern for state " + str(state))
                     exit(1)
                 redo = True
 
@@ -207,7 +209,7 @@ if __name__ == "__main__":
         op_name = op.name
         op_inputs = [tensor for tensor in op.inputs]
         op_outputs = [tensor for tensor in op.outputs]
-        print("Name: %s, inputs: %s, outputs: %s" % (op_name, str([tensor.index for tensor in op_inputs]), str([tensor.index for tensor in op_outputs])))
+        print("Name: %s, inputs: %s, outputs: %s, options: %s" % (op_name, str([tensor.index for tensor in op_inputs]), str([tensor.index for tensor in op_outputs]), op.options))
         for tensor in op_inputs:
             print(" * --> input " + str(tensor.index) + " : s=" + str(tensor.shape) + " <--")
         for tensor in op_outputs:
