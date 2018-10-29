@@ -79,7 +79,7 @@ if __name__ == "__main__":
         common_info_pattern = r"\* (?P<index>\d+):s=(?P<shape>\[\d+(, \d+){0,3}\]),t=(?P<data_type>\w+)"
 
         start_pattern = re.compile(r"Operators:")
-        op_pattern = re.compile(r"index: (?P<index>\d+), builtin_op: (?P<op_name>\w+), options: (?P<options>{ [\w=\-\.\(\)\[\],\s]*}), inputs:(?P<inputs>( \d+)+| ), outputs:(?P<outputs>( \d+)+| )$")
+        op_pattern = re.compile(r"index: (?P<index>\d+), builtin_op: (?P<op_name>\w+), options: (?P<options>{ [\w:\-\.\(\)\[\],\s]*}), inputs:(?P<inputs>( \d+)+| ), outputs:(?P<outputs>( \d+)+| )$")
         input_header_pattern = re.compile(r"\+ input tensors:")
         input_info_pattern = re.compile(common_info_pattern + r",d=$")
         tensor_data_pattern = re.compile(r"(?P<data>.+)$")
@@ -119,6 +119,9 @@ if __name__ == "__main__":
                     print("Operator name " + op_name + "does not end with 'Options'")
                     exit(1)
                 options = match.group("options").strip()
+                options = re.sub(r":(?P<value>(\w+\(\d+\)))", r":'\g<value>'", options)
+                options = re.sub(r"(?P<key>\w+):", r"'\g<key>':", options)
+                options = ast.literal_eval(options)
                 inputs = match.group("inputs").strip().split(" ")
                 outputs = match.group("outputs").strip().split(" ")
                 if current_op != None:
