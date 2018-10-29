@@ -76,16 +76,23 @@ if __name__ == "__main__":
         dump = [line for line in [line.strip() for line in f.readlines()] if line != "" ]
         f.close()
 
+        # match portion of the 'tensor line' that is common to input and output tensors
         common_info_pattern = r"\* (?P<index>\d+):s=(?P<shape>\[\d+(, \d+){0,3}\]),t=(?P<data_type>\w+)"
 
+        # match the first line
         start_pattern = re.compile(r"Operators:")
+        # match the 'op line'
         op_pattern = re.compile(r"index: (?P<index>\d+), builtin_op: (?P<op_name>\w+), options: (?P<options>{ [\w:\-\.\(\)\[\],\s]*}), inputs:(?P<inputs>( \d+)+| ), outputs:(?P<outputs>( \d+)+| )$")
+        # match the line that introduces the list of input tensors
         input_header_pattern = re.compile(r"\+ input tensors:")
+        # match input tensors, minus the data (weights), which end with 'd=', introducing the data (weights)
         input_info_pattern = re.compile(common_info_pattern + r",d=$")
+        # match any non-empty line, for use with the data (weight) line
         tensor_data_pattern = re.compile(r"(?P<data>.+)$")
+        # match the line that introduces the list of output tensors
         output_header_pattern = re.compile(r"\+ output tensors:")
+        # match input tensors, which don't feature data (weights)
         output_info_pattern = re.compile(common_info_pattern + r"$")
-
 
         state = State.START
         i = 0
@@ -119,7 +126,9 @@ if __name__ == "__main__":
                     print("Operator name " + op_name + "does not end with 'Options'")
                     exit(1)
                 options = match.group("options").strip()
+                # special case: values that such as NONE(0) and SAME(1) that come from enums must be treated as strings
                 options = re.sub(r":(?P<value>(\w+\(\d+\)))", r":'\g<value>'", options)
+                # keys are strings
                 options = re.sub(r"(?P<key>\w+):", r"'\g<key>':", options)
                 options = ast.literal_eval(options)
                 inputs = match.group("inputs").strip().split(" ")
