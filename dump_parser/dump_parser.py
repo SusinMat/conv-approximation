@@ -100,21 +100,22 @@ if __name__ == "__main__":
         current_op = None
         current_input_tensor = None
         current_output_tensor = None
+        max_error_line_length = 160
         while(i < len(dump)):
             line = dump[i]
-            redo = False
+            redo = False # if True, loop restarts without incrementing i, emulating Perl's 'redo' statement
 
             if state == State.START:
                 match = start_pattern.match(line)
                 if match == None:
-                    print("Line: '\n" + line[:min(len(line), 160)] + "\n' did not match pattern for state " + str(state))
+                    print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
                     exit(1)
                 state = state.OP
 
             elif state == State.OP:
                 match = op_pattern.match(line)
                 if match == None:
-                    print("Line: '\n" + line[:min(len(line), 160)] + "\n' did not match pattern for state " + str(state))
+                    print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
                     exit(1)
                 state = State.INPUT_HEADER
                 index = match.group("index")
@@ -143,7 +144,7 @@ if __name__ == "__main__":
             elif state == State.INPUT_HEADER:
                 match = input_header_pattern.match(line)
                 if match == None:
-                    print("Line: '\n" + line[:min(len(line), 160)] + "\n' did not match pattern for state " + str(state))
+                    print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
                     exit(1)
                 state = State.INPUT_INFO
 
@@ -169,14 +170,14 @@ if __name__ == "__main__":
                     current_input_tensor = None
                     match = output_header_pattern.match(line)
                     if match == None:
-                        print("Line: '\n" + line[:min(len(line), 160)] + "\n' did not match pattern for state " + str(state))
+                        print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
                         exit(1)
                     redo = True
 
             elif state == State.TENSOR_DATA:
                 match = tensor_data_pattern.match(line)
                 if match == None:
-                    print("Line: '\n" + line[:min(len(line), 160)] + "\n' did not match pattern for state " + str(state))
+                    print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
                     exit(1)
                 data = match.group("data")
                 if data.startswith("Empty"):
@@ -190,7 +191,7 @@ if __name__ == "__main__":
             elif state == State.OUTPUT_HEADER:
                 match = output_header_pattern.match(line)
                 if match == None:
-                    print("Line: '\n" + line[:min(len(line), 160)] + "\n' did not match pattern for state " + str(state))
+                    print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
                     exit(1)
                 state = State.OUTPUT_INFO
 
@@ -212,7 +213,7 @@ if __name__ == "__main__":
                     state = State.OP
                     match = op_pattern.match(line)
                     if match == None:
-                        print("Line: '\n" + line[:min(len(line), 160)] + "\n' did not match pattern for state " + str(state))
+                        print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
                         exit(1)
                     redo = True
 
