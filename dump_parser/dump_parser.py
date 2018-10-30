@@ -82,7 +82,7 @@ if __name__ == "__main__":
         # match the first line
         start_pattern = re.compile(r"Operators:")
         # match the 'op line'
-        op_pattern = re.compile(r"index: (?P<index>\d+), builtin_op: (?P<op_name>\w+), options: (?P<options>{ [\w:\-\.\(\)\[\],\s]*}), inputs:(?P<inputs>( \d+)+| ), outputs:(?P<outputs>( \d+)+| )$")
+        op_pattern = re.compile(r"builtin_op: (?P<op_name>\w+)\((?P<index>\d+)\), options: (?P<options>{ [\w:\-\.\(\)\[\],\s]*}), inputs:(?P<inputs>( \d+)+| ), outputs:(?P<outputs>( \d+)+| )$")
         # match the line that introduces the list of input tensors
         input_header_pattern = re.compile(r"\+ input tensors:")
         # match input tensors, minus the data (weights), which end with 'd=', introducing the data (weights)
