@@ -20,6 +20,8 @@ import pickle
 import re
 import sys
 
+from tf_op import Tensor, Op, remove_successive_duplicates
+
 class State(enum.Enum):
     def _generate_next_value_(name, start, count, last_values):
         return name
@@ -30,30 +32,6 @@ class State(enum.Enum):
     TENSOR_DATA = enum.auto()
     OUTPUT_HEADER = enum.auto()
     OUTPUT_INFO = enum.auto()
-
-class Tensor:
-    index = -1
-    shape = None
-    type_name = ""
-    data = None
-    def __init__(self):
-        self.index = -1
-        self.shape = None
-        self.type_name = ""
-        self.data = None
-
-class Op:
-    name = ""
-    index = -1
-    options = {}
-    inputs = []
-    outputs = []
-    def __init__(self):
-        self.name = ""
-        self.index = -1
-        self.options = {}
-        self.inputs = []
-        self.outputs = []
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parse the output of the Neural Network Transpiler (NNT) weight dump function.")
@@ -232,6 +210,7 @@ if __name__ == "__main__":
         exit(0)
 
     op_names = [op.name for op in ops]
+    tensors = []
     for i in range(len(ops)):
         op = ops[i]
         op_name = op.name
@@ -240,5 +219,9 @@ if __name__ == "__main__":
         print("Name: %s, inputs: %s, outputs: %s, options: %s" % (op_name, str([tensor.index for tensor in op_inputs]), str([tensor.index for tensor in op_outputs]), op.options))
         for tensor in op_inputs:
             print(" * --> input " + str(tensor.index) + " : s=" + str(tensor.shape) + " <--")
+            tensors.append(tensor)
         for tensor in op_outputs:
             print(" * <-- output " + str(tensor.index) + " : s=" + str(tensor.shape) + " -->")
+            tensors.append(tensor)
+    tensors.sort(key=lambda item: item.index)
+    tensors = remove_successive_duplicates(tensors)
