@@ -27,6 +27,29 @@ from tf_op import Tensor, Op, remove_successive_duplicates
 tf.contrib.lite.tempfile = tempfile
 tf.contrib.lite.subprocess = subprocess
 
+def read_tensor_from_image_file(file_name, input_height=224, input_width=224, input_mean=-127, input_std=127):
+    input_name = "file_reader"
+    output_name = "normalized"
+    file_reader = tf.read_file(file_name, input_name)
+
+    if file_name.endswith(".png"):
+        image_reader = tf.image.decode_png(file_reader, channels=3, name='png_reader')
+    elif file_name.endswith(".gif"):
+        image_reader = tf.squeeze(tf.image.decode_gif(file_reader, name='gif_reader'))
+    elif file_name.endswith(".bmp"):
+        image_reader = tf.image.decode_bmp(file_reader, name='bmp_reader')
+    else:
+        image_reader = tf.image.decode_jpeg(file_reader, channels=3, name='jpeg_reader')
+
+    float_caster = tf.cast(image_reader, tf.float32)
+    dims_expander = tf.expand_dims(float_caster, 0)
+    resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
+    normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
+    sess = tf.Session()
+    result = sess.run(normalized)
+
+    return result
+
 def fix_dictionary_enum(old_dict):
     new_dict = {}
     enum_pattern = re.compile(r"\w+\(\d+\)")
@@ -67,19 +90,19 @@ if __name__ == "__main__":
         ops[i].options = fix_dictionary_enum(ops[i].options)
 
     op_names = [op.name for op in ops]
-    tensors = []
-    for i in range(len(ops)):
-        op = ops[i]
-        op_name = op.name
-        op_inputs = [tensor for tensor in op.inputs]
-        op_outputs = [tensor for tensor in op.outputs]
-        print("Name: %s, inputs: %s, outputs: %s, options: %s" % (op_name, str([tensor.index for tensor in op_inputs]), str([tensor.index for tensor in op_outputs]), op.options))
-        for tensor in op_inputs:
-            print(" * --> input " + str(tensor.index) + " : s=" + str(tensor.shape) + " <--")
-            tensors.append(tensor)
-        for tensor in op_outputs:
-            print(" * <-- output " + str(tensor.index) + " : s=" + str(tensor.shape) + " -->")
-            tensors.append(tensor)
+    tensors = [item for sublist in [op.inputs + op.outputs for op in ops] for item in sublist]
+
+    # for i in range(len(ops)):
+    #     op = ops[i]
+    #     op_name = op.name
+    #     op_inputs = [tensor for tensor in op.inputs]
+    #     op_outputs = [tensor for tensor in op.outputs]
+    #     print("Name: %s, inputs: %s, outputs: %s, options: %s" % (op_name, str([tensor.index for tensor in op_inputs]), str([tensor.index for tensor in op_outputs]), op.options))
+    #     for tensor in op_inputs:
+    #         print(" * --> input " + str(tensor.index) + " : s=" + str(tensor.shape) + " <--")
+    #     for tensor in op_outputs:
+    #         print(" * <-- output " + str(tensor.index) + " : s=" + str(tensor.shape) + " -->")
+
     tensors.sort(key=lambda item: item.index)
     tensors = remove_successive_duplicates(tensors)
     # print([tensor.index for tensor in tensors])
@@ -108,3 +131,6 @@ if __name__ == "__main__":
             exit(1)
 
         tf_tensors.append(tf_tensor)
+    sess = tf.Session()
+    input_image = read_tensor_from_image_file("grace_hopper.bmp")
+    print(input_image)
