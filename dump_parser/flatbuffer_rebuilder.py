@@ -75,12 +75,15 @@ if __name__ == "__main__":
             data_type = tf.float32
         elif tensor.type_name == "INT32":
             data_type = tf.int32
+        elif tensor.type_name == "UINT8":
+            data_type = tf.uint8
         else:
-            print("Unsupported data type " + tensor.data_type)
+            print("Unsupported data type " + tensor.type_name)
             exit(1)
 
         if type(tensor.data) == np.ndarray:
-            tf_tensor = tf.convert_to_tensor(tensor.data, dtype=data_type)
+            # tf_tensor = tf.convert_to_tensor(tensor.data, dtype=data_type)
+            tf_tensor = tf.constant(tensor.data, dtype=data_type)
         elif type(tensor.data).__name__ == "NoneType":
             tf_tensor = tf.placeholder(dtype=data_type, shape=tensor.shape)
         else:
