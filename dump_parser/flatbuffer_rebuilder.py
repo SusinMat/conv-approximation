@@ -32,8 +32,10 @@ def fix_dictionary_enum(old_dict):
     enum_pattern = re.compile(r"\w+\(\d+\)")
     for key in old_dict.keys():
         value = old_dict[key]
-        if type(value) == str and re.match(enum_pattern, value):
-            value = re.sub(r"(?P<string>\w+)\(\d+\)", r"\g<string>", value)
+        if type(value) == str:
+            if re.match(enum_pattern, value):
+                value = re.sub(r"(?P<string>\w+)\(\d+\)", r"\g<string>", value)
+            value = value.lower()
         new_dict[key] = value
 
     return new_dict
