@@ -132,13 +132,19 @@ if __name__ == "__main__":
 
         tf_tensors.append(tf_tensor)
     input_image = read_tensor_from_image_file("grace_hopper.bmp")
+    image = input_image.reshape([1, 224, 224, 3])
+
     op = ops[0]
-    image= input_image.reshape([1, 224, 224, 3])
     weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=tf.float32)
     bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=tf.float32)
-    conv_layer = tf.layers.conv2d(tf_tensors[87], 32, [3, 3], kernel_initializer=weight_as_tensor, bias_initializer=bias_as_tensor, activation=tf.nn.relu6)
+    conv_layer_1 = tf.layers.conv2d(tf_tensors[87], 32, [3, 3], kernel_initializer=weight_as_tensor, bias_initializer=bias_as_tensor, activation=tf.nn.relu6, strides=[2, 2])
+
+    op = ops[1]
+    weight_as_tensor = tf.convert_to_tensor(op.inputs[1].data.transpose((1,2,3,0)), dtype=tf.float32)
+    bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=tf.float32)
+    depthwise_conv_1 = tf.nn.depthwise_conv2d(conv_layer_1, weight_as_tensor, [1, 1, 1, 1], "SAME")
     sess = tf.Session()
     tf.global_variables_initializer().run(session=sess)
     # tf.tables_initializer().run(session=sess)
-    out_tensor = sess.run(conv_layer, {tf_tensors[87]:image})
+    out_tensor = sess.run(depthwise_conv_1, {tf_tensors[87]:image})
     print(out_tensor)
