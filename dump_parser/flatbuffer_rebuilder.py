@@ -58,7 +58,7 @@ def fix_dictionary_enum(old_dict):
         if type(value) == str:
             if re.match(enum_pattern, value):
                 value = re.sub(r"(?P<string>\w+)\(\d+\)", r"\g<string>", value)
-            value = value.lower()
+            value = value.upper()
         new_dict[key] = value
 
     return new_dict
@@ -133,4 +133,11 @@ if __name__ == "__main__":
         tf_tensors.append(tf_tensor)
     sess = tf.Session()
     input_image = read_tensor_from_image_file("grace_hopper.bmp")
-    print(input_image)
+    op = ops[0]
+    image_as_tensor = tf.convert_to_tensor(input_image.reshape((1, 224, 224, 3)), dtype=tf.float32)
+    weights_as_tensor = tf.convert_to_tensor(op.inputs[1].data, dtype=tf.float32)
+    conv = tf.layers.conv2d(image_as_tensor, weights_as_tensor, [3, 3])
+    print(conv)
+    sess = tf.Session()
+    out_tensor = sess.run(conv)
+    # print(out_tensor)
