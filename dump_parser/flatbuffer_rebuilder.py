@@ -58,7 +58,7 @@ def fix_dictionary_enum(old_dict):
         if type(value) == str:
             if re.match(enum_pattern, value):
                 value = re.sub(r"(?P<string>\w+)\(\d+\)", r"\g<string>", value)
-            value = value.upper()
+            value = value.lower()
         new_dict[key] = value
 
     return new_dict
