@@ -74,17 +74,18 @@ def type_name_to_tf(type_name):
         print("Unsupported type: " + type_name)
         exit(1)
 
-def activation_function_to_tf(type_name):
-    if type_name == "NONE":
+def activation_function_to_tf(func_name):
+    func_name = func_name.upper()
+    if func_name == "NONE":
         return None
-    elif type_name == "RELU6":
+    elif func_name == "RELU6":
         return tf.nn.relu6
-    elif type_name == "RELU":
+    elif func_name == "RELU":
         return tf.nn.relu
-    elif type_name == "TANH":
+    elif func_name == "TANH":
         return tf.nn.tanh
     else:
-        print("Unsupported type: " + type_name)
+        print("Unsupported type: " + func_name)
         exit(1)
 
 def op_to_tf(op, input_value):
@@ -92,7 +93,15 @@ def op_to_tf(op, input_value):
     if op.name == "Conv2D":
         weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
         bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
-        result = tf.layers.conv2d(input_value, op.inputs[1].shape[0], op.inputs[1].shape[1:3], kernel_initializer=weight_as_tensor, bias_initializer=bias_as_tensor, strides=[op.options["stride_w"], op.options["stride_h"]], padding=op.options["padding"], activation=op.options["activation_function"])
+        result = tf.layers.conv2d(input_value,
+                op.inputs[1].shape[0],
+                op.inputs[1].shape[1:3],
+                kernel_initializer=weight_as_tensor,
+                bias_initializer=bias_as_tensor,
+                strides=[op.options["stride_w"], op.options["stride_h"]],
+                padding=op.options["padding"],
+                activation=activation_function_to_tf(op.options["fused_activation_function"])
+                )
     elif op.name == "DepthwiseConv2D":
         pass
     elif op.name == "Pool2D":
@@ -107,7 +116,7 @@ def op_to_tf(op, input_value):
     if result == None:
         print("Error: result unassigned")
         exit(1)
-    return
+    return result
 
 
 if __name__ == "__main__":
@@ -177,15 +186,13 @@ if __name__ == "__main__":
             exit(1)
 
         tf_tensors.append(tf_tensor)
-    for op in ops:
-        op_to_tf(op, None)
     input_image = read_tensor_from_image_file("grace_hopper.bmp")
     image = input_image.reshape([1, 224, 224, 3])
 
     op = ops[0]
-    weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=tf.float32)
-    bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=tf.float32)
-    conv_layer_1 = tf.layers.conv2d(tf_tensors[87], 32, [3, 3], kernel_initializer=weight_as_tensor, bias_initializer=bias_as_tensor, activation=tf.nn.relu6, strides=[2, 2])
+    input_placeholder = tf_tensors[87]
+    conv_layer_1 = op_to_tf(op, input_placeholder)
+
 
     op = ops[1]
     weight_as_tensor = tf.convert_to_tensor(op.inputs[1].data.transpose((1,2,3,0)), dtype=tf.float32)
@@ -198,5 +205,5 @@ if __name__ == "__main__":
     sess = tf.Session()
     tf.global_variables_initializer().run(session=sess)
     # tf.tables_initializer().run(session=sess)
-    out_tensor = sess.run(result, {tf_tensors[87]:image})
+    out_tensor = sess.run(result, {input_placeholder:image})
     print(out_tensor)
