@@ -88,6 +88,12 @@ def activation_function_to_tf(func_name):
         print("Unsupported type: " + func_name)
         exit(1)
 
+def tensor_has_no_data(tensor):
+    if type(tensor.data).__name__ == "NoneType":
+        return True
+    else:
+        return False
+
 def op_to_tf(op, input_value):
     result = None
     if op.name == "Conv2D":
@@ -179,7 +185,7 @@ if __name__ == "__main__":
         if type(tensor.data) == np.ndarray:
             # tf_tensor = tf.convert_to_tensor(tensor.data, dtype=data_type)
             tf_tensor = tf.constant(tensor.data, dtype=data_type)
-        elif type(tensor.data).__name__ == "NoneType":
+        elif tensor_has_no_data(tensor):
             tf_tensor = tf.placeholder(dtype=data_type, shape=tensor.shape)
         else:
             print("Tensor's 'data' member is of unsupported type " + type(tensor.data))
@@ -190,7 +196,13 @@ if __name__ == "__main__":
     image = input_image.reshape([1, 224, 224, 3])
 
     op = ops[0]
-    input_placeholder = tf_tensors[87]
+    input_placeholder = None
+    for tensor in ops[0].inputs:
+        if tensor_has_no_data(tensor):
+            input_placeholder = tf_tensors[tensor.index]
+    if input_placeholder == None:
+        print("Error: could not find input tensor.")
+        exit(1)
     conv_layer_1 = op_to_tf(op, input_placeholder)
 
 
