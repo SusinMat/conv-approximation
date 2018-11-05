@@ -104,7 +104,7 @@ def op_to_tf(op, input_value):
                 op.inputs[1].shape[1:3],
                 kernel_initializer=weight_as_tensor,
                 bias_initializer=bias_as_tensor,
-                strides=[op.options["stride_w"], op.options["stride_h"]],
+                strides=[op.options["stride_h"], op.options["stride_w"]],
                 padding=op.options["padding"],
                 activation=activation_function_to_tf(op.options["fused_activation_function"])
                 )
