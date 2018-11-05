@@ -89,7 +89,7 @@ def activation_function_to_tf(func_name):
         exit(1)
 
 def tensor_has_no_data(tensor):
-    if type(tensor.data).__name__ == "NoneType":
+    if tensor.data is None:
         return True
     else:
         return False
