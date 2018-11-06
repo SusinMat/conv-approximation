@@ -223,16 +223,6 @@ if __name__ == "__main__":
     if input_placeholder == None:
         print("Error: could not find input tensor.")
         exit(1)
-    conv_layer_1 = op_to_tf(op, input_placeholder)
-
-
-    op = ops[1]
-    weight_as_tensor = tf.convert_to_tensor(op.inputs[1].data.transpose((1,2,3,0)), dtype=tf.float32)
-    bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=tf.float32)
-    depthwise_conv_1 = tf.nn.depthwise_conv2d(conv_layer_1, weight_as_tensor, [1, 1, 1, 1], "SAME")
-    bias_applied = tf.nn.bias_add(depthwise_conv_1, op.inputs[2].data)
-    result = tf.nn.relu6(bias_applied)
-
 
     previous_output = input_placeholder
     for op in ops:
@@ -242,5 +232,9 @@ if __name__ == "__main__":
     sess = tf.Session()
     tf.global_variables_initializer().run(session=sess)
     # tf.tables_initializer().run(session=sess)
-    out_tensor = sess.run(result, {input_placeholder:image})
-    print(out_tensor)
+    out_tensor = sess.run(previous_output, {input_placeholder:image})
+
+    sorted_out_tensor = np.fliplr(np.sort(out_tensor))
+    print("Top 5:")
+    for i in range(5):
+        print((sorted_out_tensor[0, i] * 100), "%")
