@@ -217,6 +217,8 @@ if __name__ == "__main__":
 
     op = ops[0]
     input_placeholder = None
+    evaluated_tensors = []
+
     for tensor in ops[0].inputs:
         if tensor_has_no_data(tensor):
             input_placeholder = tf_tensors[tensor.index]
@@ -224,17 +226,11 @@ if __name__ == "__main__":
         print("Error: could not find input tensor.")
         exit(1)
 
+    evaluated_tensors.append(input_placeholder)
+    #evaluated_tensors.append(image)
     previous_output = input_placeholder
     for op in ops:
-        # print(op.inputs[0], op.inputs[1])
-        previous_output = op_to_tf(op, previous_output)
+        evaluated_tensors.append(op_to_tf(op, evaluated_tensors[-1]))
+        print(evaluated_tensors[-1])
 
-    sess = tf.Session()
-    tf.global_variables_initializer().run(session=sess)
-    # tf.tables_initializer().run(session=sess)
-    out_tensor = sess.run(previous_output, {input_placeholder:image})
 
-    sorted_out_tensor = np.fliplr(np.sort(out_tensor))
-    print("Top 5:")
-    for i in range(5):
-        print((sorted_out_tensor[0, i] * 100), "%")
