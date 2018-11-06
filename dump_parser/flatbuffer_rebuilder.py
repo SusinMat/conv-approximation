@@ -116,7 +116,7 @@ def op_to_tf(op, input_value):
                                                          op.inputs[1].shape[1:3],
                                                          depth_multiplier=op.options["depth_multiplier"],
                                                          stride=[op.options["stride_h"], op.options["stride_w"]],
-                                                         padding=op.options["padding"],
+                                                         padding=op.options["padding"].upper(),
                                                          activation_fn=activation_function_to_tf(op.options["fused_activation_function"]))
         pass
     elif op.name == "Pool2D":
