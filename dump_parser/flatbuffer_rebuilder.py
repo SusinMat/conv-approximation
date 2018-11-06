@@ -120,10 +120,8 @@ def op_to_tf(op, input_value):
                                                          activation_fn=activation_function_to_tf(op.options["fused_activation_function"]))
         pass
     elif op.name == "Pool2D":
-        weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
-        bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
         result = tf.contrib.slim.avg_pool2d(input_value,
-                                            op.inputs[1].shape[1:3],
+                                            [op.options["filter_height"], op.options["filter_width"]],
                                             strides=[op.options["stride_h"], op.options["strite_w"]],
                                             padding=op.options["padding"])
     elif op.name == "Squeeze":
