@@ -234,6 +234,11 @@ if __name__ == "__main__":
     result = tf.nn.relu6(bias_applied)
 
 
+    previous_output = input_placeholder
+    for op in ops:
+        # print(op.inputs[0], op.inputs[1])
+        previous_output = op_to_tf(op, previous_output)
+
     sess = tf.Session()
     tf.global_variables_initializer().run(session=sess)
     # tf.tables_initializer().run(session=sess)
