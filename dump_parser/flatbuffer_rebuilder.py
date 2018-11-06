@@ -124,7 +124,7 @@ def op_to_tf(op, input_value):
         bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
         result = tf.contrib.slim.avg_pool2d(input_value,
                                             op.inputs[1].shape[1:3],
-                                            strides=[op.options["stride_h"], op.options["strite_w"]],
+                                            strides=[op.options["stride_h"], op.options["stride_w"]],
                                             padding=op.options["padding"])
     elif op.name == "Squeeze":
         pass
