@@ -107,7 +107,8 @@ def op_to_tf(op, input_value):
                 strides=[op.options["stride_h"], op.options["stride_w"]],
                 padding=op.options["padding"],
                 activation=activation_function_to_tf(op.options["fused_activation_function"])
-                )
+               )
+
     elif op.name == "DepthwiseConv2D":
         weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
         bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
@@ -118,14 +119,17 @@ def op_to_tf(op, input_value):
                                                          stride=[op.options["stride_h"], op.options["stride_w"]],
                                                          padding=op.options["padding"].upper(),
                                                          activation_fn=activation_function_to_tf(op.options["fused_activation_function"]))
-        pass
+
     elif op.name == "Pool2D":
         result = tf.contrib.slim.avg_pool2d(input_value,
                                             [op.options["filter_height"], op.options["filter_width"]],
                                             stride=[op.options["stride_h"], op.options["stride_w"]],
                                             padding=op.options["padding"].upper())
+
     elif op.name == "Squeeze":
-        pass
+        result = tf.squeeze(input_value,
+                            axis=op.options["squeeze_dims"]
+                           )
 
     elif op.name == "Reshape":
         result = tf.reshape(input_value, op.options["new_shape"])
@@ -139,8 +143,9 @@ def op_to_tf(op, input_value):
     else:
         print("Unsupported operation: " + op.name)
         exit(1)
+
     if result == None:
-        print("Error: result unassigned")
+        print("Error: result unassigned. Op name: " + op.name)
         exit(1)
     return result
 
