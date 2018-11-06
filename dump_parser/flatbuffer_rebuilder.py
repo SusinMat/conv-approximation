@@ -125,8 +125,7 @@ def op_to_tf(op, input_value):
         result = tf.contrib.slim.avg_pool2d(input_value,
                                             op.inputs[1].shape[1:3],
                                             strides=[op.options["stride_h"], op.options["strite_w"]],
-                                            padding=op.options["padding"],
-                                            activation=activation_function_to_tf(op.options["fused_activation_function"]))
+                                            padding=op.options["padding"])
     elif op.name == "Squeeze":
         pass
     elif op.name == "Softmax":
