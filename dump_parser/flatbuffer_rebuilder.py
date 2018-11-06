@@ -133,7 +133,11 @@ def op_to_tf(op, input_value):
         result = tf.reshape(input_value, op.options["new_shape"])
 
     elif op.name == "Softmax":
-        pass
+        if abs(op.options["beta"] - 1.0) > 0.0001:
+            beta = tf.constant(op.options["beta"])
+            input_value = beta * input_value
+        result = tf.nn.softmax(input_value)
+
     else:
         print("Unsupported operation: " + op.name)
         exit(1)
