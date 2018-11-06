@@ -128,6 +128,10 @@ def op_to_tf(op, input_value):
                                             padding=op.options["padding"])
     elif op.name == "Squeeze":
         pass
+
+    elif op.name == "Reshape":
+        result = tf.reshape(input_value, op.options["new_shape"])
+
     elif op.name == "Softmax":
         pass
     else:
