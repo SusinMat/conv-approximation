@@ -109,6 +109,15 @@ def op_to_tf(op, input_value):
                 activation=activation_function_to_tf(op.options["fused_activation_function"])
                 )
     elif op.name == "DepthwiseConv2D":
+        weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
+        bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
+        result = tf.contrib.slim.separable_convolution2d(input_value,
+                                                         None,  # Makes the separable_convolution2d depthwise (as used @mobilenet)
+                                                         op.inputs[1].shape[1:3],
+                                                         depth_multiplier=op.options["depth_multiplier"],
+                                                         stride=[op.options["stride_h"], op.options["stride_w"]]
+                                                         padding=op.options["padding"],
+                                                         activation_fn=activation_function_to_tf(op.options["fused_activation_function"]))
         pass
     elif op.name == "Pool2D":
         weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
