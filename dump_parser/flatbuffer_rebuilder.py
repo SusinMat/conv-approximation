@@ -122,8 +122,8 @@ def op_to_tf(op, input_value):
     elif op.name == "Pool2D":
         result = tf.contrib.slim.avg_pool2d(input_value,
                                             [op.options["filter_height"], op.options["filter_width"]],
-                                            strides=[op.options["stride_h"], op.options["strite_w"]],
-                                            padding=op.options["padding"])
+                                            stride=[op.options["stride_h"], op.options["stride_w"]],
+                                            padding=op.options["padding"].upper())
     elif op.name == "Squeeze":
         pass
 
