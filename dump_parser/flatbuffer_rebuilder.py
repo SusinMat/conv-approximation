@@ -110,17 +110,31 @@ def op_to_tf(op, input_value):
                )
 
     elif op.name == "DepthwiseConv2D":
+        weight_data = op.inputs[1].data
+        if op.inputs[1].type_name == "FLOAT32":
+            weight_data = weight_data.astype("float32")
+        weight_as_array = weight_data.transpose(1, 2, 3, 0)
         weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
         bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
-        result = tf.contrib.slim.separable_convolution2d(input_value,
-                                                         None,  # Makes the separable_convolution2d depthwise (as used @mobilenet)
-                                                         op.inputs[1].shape[1:3],
-                                                         weights_initializer=weight_as_tensor,
-                                                         biases_initializer=bias_as_tensor,
-                                                         depth_multiplier=op.options["depth_multiplier"],
-                                                         stride=[op.options["stride_h"], op.options["stride_w"]],
-                                                         padding=op.options["padding"].upper(),
-                                                         activation_fn=activation_function_to_tf(op.options["fused_activation_function"]))
+        # result = tf.contrib.slim.separable_convolution2d(input_value,
+        #                                                  None,  # Makes the separable_convolution2d depthwise (as used @mobilenet)
+        #                                                  op.inputs[1].shape[1:3],
+        #                                                  weights_initializer=weight_as_tensor,
+        #                                                  biases_initializer=bias_as_tensor,
+        #                                                  depth_multiplier=op.options["depth_multiplier"],
+        #                                                  stride=[op.options["stride_h"], op.options["stride_w"]],
+        #                                                  padding=op.options["padding"].upper(),
+        #                                                  activation_fn=activation_function_to_tf(op.options["fused_activation_function"]))
+        result = tf.nn.depthwise_conv2d(input_value,
+                weight_as_array,
+                [1, op.options["stride_h"], op.options["stride_w"], 1],
+                padding=op.options["padding"].upper()
+               )
+        result = tf.nn.bias_add(result, op.inputs[2].data)
+        activation_function = activation_function_to_tf(op.options["fused_activation_function"])
+        if activation_function is not None:
+            result = activation_function(result)
+
 
     elif op.name == "Pool2D":
         result = tf.contrib.slim.avg_pool2d(input_value,
@@ -220,7 +234,7 @@ if __name__ == "__main__":
 
         tf_tensors.append(tf_tensor)
     input_image = read_tensor_from_image_file("grace_hopper.bmp")
-    # input_image = read_tensor_from_image_file("llama.bmp")
+    input_image = read_tensor_from_image_file("llama.bmp")
     image = input_image.reshape([1, 224, 224, 3])
 
     op = ops[0]
