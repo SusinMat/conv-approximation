@@ -239,10 +239,11 @@ if __name__ == "__main__":
     sess = tf.Session()
     tf.global_variables_initializer().run(session=sess)
     # tf.tables_initializer().run(session=sess)
-    out_tensor = sess.run(evaluated_tensors[-1], {input_placeholder:image})
+    out_tensor = sess.run(evaluated_tensors[-1], {input_placeholder : image})
 
     sorted_out_tensor = np.flipud(np.sort(out_tensor[0]))
     indexes = np.argsort(-out_tensor[0])
     print("Top 5:")
     for i in range(5):
         print("%03d : %05.2f%%" % (indexes[i], sorted_out_tensor[i] * 100))
+    print(sess.run(evaluated_tensors[0], {input_placeholder : image}))
