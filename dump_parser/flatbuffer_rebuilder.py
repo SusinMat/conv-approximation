@@ -232,17 +232,14 @@ if __name__ == "__main__":
         exit(1)
 
     evaluated_tensors.append(input_placeholder)
-    #evaluated_tensors.append(image)
-    previous_output = input_placeholder
     for op in ops:
         evaluated_tensors.append(op_to_tf(op, evaluated_tensors[-1]))
         print(evaluated_tensors[-1])
 
-
     sess = tf.Session()
     tf.global_variables_initializer().run(session=sess)
     # tf.tables_initializer().run(session=sess)
-    out_tensor = sess.run(previous_output, {input_placeholder:image})
+    out_tensor = sess.run(evaluated_tensors[-1], {input_placeholder:image})
 
     sorted_out_tensor = np.flipud(np.sort(out_tensor[0]))
     indexes = np.argsort(-out_tensor[0])
