@@ -115,6 +115,8 @@ def op_to_tf(op, input_value):
         result = tf.contrib.slim.separable_convolution2d(input_value,
                                                          None,  # Makes the separable_convolution2d depthwise (as used @mobilenet)
                                                          op.inputs[1].shape[1:3],
+                                                         weights_initializer=weight_as_tensor,
+                                                         biases_initializer=bias_as_tensor,
                                                          depth_multiplier=op.options["depth_multiplier"],
                                                          stride=[op.options["stride_h"], op.options["stride_w"]],
                                                          padding=op.options["padding"].upper(),
@@ -218,6 +220,7 @@ if __name__ == "__main__":
 
         tf_tensors.append(tf_tensor)
     input_image = read_tensor_from_image_file("grace_hopper.bmp")
+    # input_image = read_tensor_from_image_file("llama.bmp")
     image = input_image.reshape([1, 224, 224, 3])
 
     op = ops[0]
@@ -246,4 +249,4 @@ if __name__ == "__main__":
     print("Top 5:")
     for i in range(5):
         print("%03d : %05.2f%%" % (indexes[i], sorted_out_tensor[i] * 100))
-    print(sess.run(evaluated_tensors[0], {input_placeholder : image}))
+    print(sess.run(evaluated_tensors[2], {input_placeholder : image}))
