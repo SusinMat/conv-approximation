@@ -111,8 +111,6 @@ def op_to_tf(op, input_value):
 
     elif op.name == "DepthwiseConv2D":
         weight_data = op.inputs[1].data
-        if op.inputs[1].type_name == "FLOAT32":
-            weight_data = weight_data.astype("float32")
         weight_as_array = weight_data.transpose(1, 2, 3, 0)
         weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
         bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
@@ -234,7 +232,7 @@ if __name__ == "__main__":
 
         tf_tensors.append(tf_tensor)
     input_image = read_tensor_from_image_file("grace_hopper.bmp")
-    input_image = read_tensor_from_image_file("llama.bmp")
+    # input_image = read_tensor_from_image_file("llama.bmp")
     image = input_image.reshape([1, 224, 224, 3])
 
     op = ops[0]

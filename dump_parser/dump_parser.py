@@ -162,7 +162,7 @@ if __name__ == "__main__":
                     data = None
                 else:
                     data = ast.literal_eval(data)
-                    data = np.asarray(data)
+                    data = np.asarray(data, dtype=getattr(np, current_input_tensor.type_name.lower()))
                 current_input_tensor.data = data
                 state = State.INPUT_INFO
 
