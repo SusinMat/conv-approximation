@@ -27,7 +27,8 @@ from tf_op import Tensor, Op, remove_successive_duplicates
 tf.contrib.lite.tempfile = tempfile
 tf.contrib.lite.subprocess = subprocess
 
-use_slim_depthwise = True
+use_slim_depthwise = False
+use_layers_conv  = False
 
 def read_tensor_from_image_file(file_name, input_height=224, input_width=224, input_mean=-127, input_std=127):
     input_name = "file_reader"
@@ -101,21 +102,34 @@ def op_to_tf(op, input_value):
     if op.name == "Conv2D":
         weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
         bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
-        result = tf.layers.conv2d(input_value,
-                op.inputs[1].shape[0],
-                op.inputs[1].shape[1:3],
-                kernel_initializer=weight_as_tensor,
-                bias_initializer=bias_as_tensor,
-                strides=[op.options["stride_h"], op.options["stride_w"]],
-                padding=op.options["padding"],
-                activation=activation_function_to_tf(op.options["fused_activation_function"])
-               )
-
-    elif op.name == "DepthwiseConv2D":
         weight_data = op.inputs[1].data
         weight_as_array = weight_data.transpose(1, 2, 3, 0)
+        if use_layers_conv:
+            result = tf.layers.conv2d(input_value,
+                    op.inputs[1].shape[0],
+                    op.inputs[1].shape[1:3],
+                    kernel_initializer=weight_as_tensor,
+                    bias_initializer=bias_as_tensor,
+                    strides=[op.options["stride_h"], op.options["stride_w"]],
+                    padding=op.options["padding"],
+                    activation=activation_function_to_tf(op.options["fused_activation_function"])
+                   )
+        else:
+            result = tf.nn.conv2d(input_value,
+                    weight_as_array,
+                    [1, op.options["stride_h"], op.options["stride_w"], 1],
+                    padding=op.options["padding"].upper()
+                   )
+            result = tf.nn.bias_add(result, op.inputs[2].data)
+            activation_function = activation_function_to_tf(op.options["fused_activation_function"])
+            if activation_function is not None:
+                result = activation_function(result)
+
+    elif op.name == "DepthwiseConv2D":
         weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
         bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
+        weight_data = op.inputs[1].data
+        weight_as_array = weight_data.transpose(1, 2, 3, 0)
         if use_slim_depthwise:
             result = tf.contrib.slim.separable_convolution2d(input_value,
                                                              None,  # Makes the separable_convolution2d depthwise (as used @mobilenet)
@@ -235,7 +249,7 @@ if __name__ == "__main__":
 
         tf_tensors.append(tf_tensor)
     input_image = read_tensor_from_image_file("grace_hopper.bmp")
-    # input_image = read_tensor_from_image_file("llama.bmp")
+    input_image = read_tensor_from_image_file("llama.bmp")
     image = input_image.reshape([1, 224, 224, 3])
 
     op = ops[0]
