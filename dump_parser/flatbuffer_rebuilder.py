@@ -262,6 +262,9 @@ if __name__ == "__main__":
             exit(1)
         tf_tensors.append(tf_tensor)
 
+    with open("labels.txt", "r") as f:
+        labels = [line.strip() for line in f.readlines()]
+
     input_image = read_tensor_from_image_file("grace_hopper.bmp")
     input_image = read_tensor_from_image_file("scabbard.bmp")
     input_image = read_tensor_from_image_file("dingo.bmp")
@@ -297,5 +300,5 @@ if __name__ == "__main__":
     indexes = np.argsort(-out_tensor[0])
     print("Top 5:")
     for i in range(5):
-        print("%03d : %05.2f%%" % (indexes[i], sorted_out_tensor[i] * 100))
+        print("%03d : %05.2f%% (%s)" % (indexes[i], sorted_out_tensor[i] * 100, labels[indexes[i] - 1]))
     # print(sess.run(evaluated_tensors[2], {input_placeholder : image}))
