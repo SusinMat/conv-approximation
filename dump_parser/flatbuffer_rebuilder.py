@@ -27,8 +27,9 @@ from tf_op import Tensor, Op, remove_successive_duplicates
 tf.contrib.lite.tempfile = tempfile
 tf.contrib.lite.subprocess = subprocess
 
+use_layers_conv    = 0
 use_slim_depthwise = 0
-use_layers_conv    = 1
+use_slim_pool      = 0
 
 def read_tensor_from_image_file(file_name, input_height=224, input_width=224, input_mean=-127, input_std=127):
     input_name = "file_reader"
@@ -163,11 +164,25 @@ def op_to_tf(op, input_value):
                 subgraph.append(result)
 
     elif op.name == "Pool2D":
-        result = tf.contrib.slim.avg_pool2d(input_value,
-                                            [op.options["filter_height"], op.options["filter_width"]],
-                                            stride=[op.options["stride_h"], op.options["stride_w"]],
-                                            padding=op.options["padding"].upper())
-        subgraph.append(result)
+        if use_slim_pool:
+            result = tf.contrib.slim.avg_pool2d(input_value, # are we sure it's avg pooling?
+                    [op.options["filter_height"], op.options["filter_width"]],
+                    stride=[op.options["stride_h"], op.options["stride_w"]],
+                    padding=op.options["padding"].upper()
+                   )
+            subgraph.append(result)
+        else:
+            result = tf.nn.pool(input_value,
+                    window_shape=[op.options["filter_height"], op.options["filter_width"]],
+                    pooling_type="MAX", # is this the correct pooling type?
+                    padding=op.options["padding"].upper(),
+                    strides=[op.options["stride_h"], op.options["stride_w"]]
+                   )
+            subgraph.append(result)
+            activation_function = activation_function_to_tf(op.options["fused_activation_function"])
+            if activation_function is not None:
+                result = activation_function(result)
+                subgraph.append(result)
 
     elif op.name == "Squeeze":
         result = tf.squeeze(input_value,
