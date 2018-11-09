@@ -28,7 +28,7 @@ tf.contrib.lite.tempfile = tempfile
 tf.contrib.lite.subprocess = subprocess
 
 use_slim_depthwise = 0
-use_layers_conv    = 0
+use_layers_conv    = 1
 
 def read_tensor_from_image_file(file_name, input_height=224, input_width=224, input_mean=-127, input_std=127):
     input_name = "file_reader"
@@ -190,7 +190,7 @@ def op_to_tf(op, input_value):
     if result == None:
         print("Error: result unassigned. Op name: " + op.name)
         exit(1)
-    return (result, subgraph)
+    return subgraph
 
 
 if __name__ == "__main__":
@@ -258,8 +258,8 @@ if __name__ == "__main__":
         else:
             print("Tensor's 'data' member is of unsupported type " + type(tensor.data))
             exit(1)
-
         tf_tensors.append(tf_tensor)
+
     input_image = read_tensor_from_image_file("grace_hopper.bmp")
     input_image = read_tensor_from_image_file("llama.bmp")
     input_image = read_tensor_from_image_file("scabbard.bmp")
@@ -267,7 +267,6 @@ if __name__ == "__main__":
 
     op = ops[0]
     input_placeholder = None
-    evaluated_tensors = []
 
     for tensor in ops[0].inputs:
         if tensor_has_no_data(tensor):
@@ -276,10 +275,10 @@ if __name__ == "__main__":
         print("Error: could not find input tensor.")
         exit(1)
 
-    evaluated_tensors.append(input_placeholder)
+    graph = [input_placeholder]
     for op in ops:
-        (result, subgraph) = op_to_tf(op, evaluated_tensors[-1])
-        evaluated_tensors.append(result)
+        subgraph = op_to_tf(op, graph[-1])
+        graph += subgraph
         for tensor in subgraph:
             print(tensor)
         print("----------------")
@@ -287,7 +286,7 @@ if __name__ == "__main__":
     sess = tf.Session()
     tf.global_variables_initializer().run(session=sess)
     # tf.tables_initializer().run(session=sess)
-    out_tensor = sess.run(evaluated_tensors[-1], {input_placeholder : image})
+    out_tensor = sess.run(graph[-1], {input_placeholder : image})
 
     sorted_out_tensor = np.flipud(np.sort(out_tensor[0]))
     indexes = np.argsort(-out_tensor[0])
