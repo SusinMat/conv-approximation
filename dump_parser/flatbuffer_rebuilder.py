@@ -27,8 +27,8 @@ from tf_op import Tensor, Op, remove_successive_duplicates
 tf.contrib.lite.tempfile = tempfile
 tf.contrib.lite.subprocess = subprocess
 
-use_slim_depthwise = False
-use_layers_conv  = False
+use_slim_depthwise = 0
+use_layers_conv    = 0
 
 def read_tensor_from_image_file(file_name, input_height=224, input_width=224, input_mean=-127, input_std=127):
     input_name = "file_reader"
@@ -99,6 +99,7 @@ def tensor_has_no_data(tensor):
 
 def op_to_tf(op, input_value):
     result = None
+    subgraph = []
     if op.name == "Conv2D":
         weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
         bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
@@ -114,16 +115,20 @@ def op_to_tf(op, input_value):
                     padding=op.options["padding"],
                     activation=activation_function_to_tf(op.options["fused_activation_function"])
                    )
+            subgraph.append(result)
         else:
             result = tf.nn.conv2d(input_value,
                     weight_as_array,
                     [1, op.options["stride_h"], op.options["stride_w"], 1],
                     padding=op.options["padding"].upper()
                    )
+            subgraph.append(result)
             result = tf.nn.bias_add(result, op.inputs[2].data)
+            subgraph.append(result)
             activation_function = activation_function_to_tf(op.options["fused_activation_function"])
             if activation_function is not None:
                 result = activation_function(result)
+                subgraph.append(result)
 
     elif op.name == "DepthwiseConv2D":
         weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
@@ -140,27 +145,33 @@ def op_to_tf(op, input_value):
                                                              stride=[op.options["stride_h"], op.options["stride_w"]],
                                                              padding=op.options["padding"].upper(),
                                                              activation_fn=activation_function_to_tf(op.options["fused_activation_function"]))
+            subgraph.append(result)
         else:
             result = tf.nn.depthwise_conv2d(input_value,
                     weight_as_array,
                     [1, op.options["stride_h"], op.options["stride_w"], 1],
                     padding=op.options["padding"].upper()
                    )
+            subgraph.append(result)
             result = tf.nn.bias_add(result, op.inputs[2].data)
+            subgraph.append(result)
             activation_function = activation_function_to_tf(op.options["fused_activation_function"])
             if activation_function is not None:
                 result = activation_function(result)
+                subgraph.append(result)
 
     elif op.name == "Pool2D":
         result = tf.contrib.slim.avg_pool2d(input_value,
                                             [op.options["filter_height"], op.options["filter_width"]],
                                             stride=[op.options["stride_h"], op.options["stride_w"]],
                                             padding=op.options["padding"].upper())
+        subgraph.append(result)
 
     elif op.name == "Squeeze":
         result = tf.squeeze(input_value,
                             axis=op.options["squeeze_dims"]
                            )
+        subgraph.append(result)
 
     elif op.name == "Reshape":
         result = tf.reshape(input_value, op.options["new_shape"])
@@ -170,6 +181,7 @@ def op_to_tf(op, input_value):
             beta = tf.constant(op.options["beta"])
             input_value = beta * input_value
         result = tf.nn.softmax(input_value)
+        subgraph.append(result)
 
     else:
         print("Unsupported operation: " + op.name)
@@ -178,7 +190,7 @@ def op_to_tf(op, input_value):
     if result == None:
         print("Error: result unassigned. Op name: " + op.name)
         exit(1)
-    return result
+    return (result, subgraph)
 
 
 if __name__ == "__main__":
@@ -250,6 +262,7 @@ if __name__ == "__main__":
         tf_tensors.append(tf_tensor)
     input_image = read_tensor_from_image_file("grace_hopper.bmp")
     input_image = read_tensor_from_image_file("llama.bmp")
+    input_image = read_tensor_from_image_file("scabbard.bmp")
     image = input_image.reshape([1, 224, 224, 3])
 
     op = ops[0]
@@ -265,8 +278,11 @@ if __name__ == "__main__":
 
     evaluated_tensors.append(input_placeholder)
     for op in ops:
-        evaluated_tensors.append(op_to_tf(op, evaluated_tensors[-1]))
-        print(evaluated_tensors[-1])
+        (result, subgraph) = op_to_tf(op, evaluated_tensors[-1])
+        evaluated_tensors.append(result)
+        for tensor in subgraph:
+            print(tensor)
+        print("----------------")
 
     sess = tf.Session()
     tf.global_variables_initializer().run(session=sess)
