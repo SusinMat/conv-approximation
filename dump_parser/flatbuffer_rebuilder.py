@@ -111,6 +111,7 @@ def op_to_tf(op, input_value):
                     op.inputs[1].shape[1:3],
                     kernel_initializer=weight_as_tensor,
                     bias_initializer=bias_as_tensor,
+                    use_bias=False,
                     strides=[op.options["stride_h"], op.options["stride_w"]],
                     padding=op.options["padding"],
                     activation=activation_function_to_tf(op.options["fused_activation_function"])
@@ -137,14 +138,15 @@ def op_to_tf(op, input_value):
         weight_as_array = weight_data.transpose(1, 2, 3, 0)
         if use_slim_depthwise:
             result = tf.contrib.slim.separable_convolution2d(input_value,
-                                                             None,  # Makes the separable_convolution2d depthwise (as used @mobilenet)
-                                                             op.inputs[1].shape[1:3],
-                                                             weights_initializer=weight_as_tensor,
-                                                             biases_initializer=bias_as_tensor,
-                                                             depth_multiplier=op.options["depth_multiplier"],
-                                                             stride=[op.options["stride_h"], op.options["stride_w"]],
-                                                             padding=op.options["padding"].upper(),
-                                                             activation_fn=activation_function_to_tf(op.options["fused_activation_function"]))
+                    None, # Makes the separable_convolution2d depthwise (as used @mobilenet)
+                    op.inputs[1].shape[1:3],
+                    weights_initializer=weight_as_tensor,
+                    biases_initializer=bias_as_tensor,
+                    depth_multiplier=op.options["depth_multiplier"],
+                    stride=[op.options["stride_h"], op.options["stride_w"]],
+                    padding=op.options["padding"].upper(),
+                    activation_fn=activation_function_to_tf(op.options["fused_activation_function"])
+                   )
             subgraph.append(result)
         else:
             result = tf.nn.depthwise_conv2d(input_value,
@@ -261,8 +263,11 @@ if __name__ == "__main__":
         tf_tensors.append(tf_tensor)
 
     input_image = read_tensor_from_image_file("grace_hopper.bmp")
-    input_image = read_tensor_from_image_file("llama.bmp")
     input_image = read_tensor_from_image_file("scabbard.bmp")
+    input_image = read_tensor_from_image_file("dingo.bmp")
+    input_image = read_tensor_from_image_file("tench.bmp")
+    input_image = read_tensor_from_image_file("llama.bmp")
+    input_image = read_tensor_from_image_file("zebra.bmp")
     image = input_image.reshape([1, 224, 224, 3])
 
     op = ops[0]
