@@ -27,9 +27,11 @@ from tf_op import Tensor, Op, remove_successive_duplicates
 tf.contrib.lite.tempfile = tempfile
 tf.contrib.lite.subprocess = subprocess
 
-use_layers_conv    = 0
+use_layers_conv    = 1
 use_slim_depthwise = 0
 use_slim_pool      = 0
+pooling_types      = ["AVG", "MAX"]
+pooling_type       = 1 # is this the correct pooling type?
 
 def read_tensor_from_image_file(file_name, input_height=224, input_width=224, input_mean=-127, input_std=127):
     input_name = "file_reader"
@@ -174,7 +176,7 @@ def op_to_tf(op, input_value):
         else:
             result = tf.nn.pool(input_value,
                     window_shape=[op.options["filter_height"], op.options["filter_width"]],
-                    pooling_type="MAX", # is this the correct pooling type?
+                    pooling_type=pooling_types[pooling_type],
                     padding=op.options["padding"].upper(),
                     strides=[op.options["stride_h"], op.options["stride_w"]]
                    )
