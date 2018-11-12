@@ -27,7 +27,7 @@ from tf_op import Tensor, Op, remove_successive_duplicates
 tf.contrib.lite.tempfile = tempfile
 tf.contrib.lite.subprocess = subprocess
 
-use_layers_conv    = 1
+use_layers_conv    = 0
 use_slim_depthwise = 0
 use_slim_pool      = 0
 pooling_types      = ["AVG", "MAX"]
@@ -316,5 +316,5 @@ if __name__ == "__main__":
     indexes = np.argsort(-out_tensor[0])
     print("Top 5:")
     for i in range(5):
-        print("%03d : %05.2f%% (%s)" % (indexes[i], sorted_out_tensor[i] * 100, labels[indexes[i] - 1]))
+        print("%03d : %05.2f%% (%s)" % (indexes[i], sorted_out_tensor[i] * 100, labels[indexes[i]]))
     # print(sess.run(evaluated_tensors[2], {input_placeholder : image}))
