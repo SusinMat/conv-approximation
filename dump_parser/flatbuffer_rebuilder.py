@@ -167,7 +167,7 @@ def op_to_tf(op, input_value):
 
     elif op.name == "Pool2D":
         if use_slim_pool:
-            result = tf.contrib.slim.avg_pool2d(input_value, # are we sure it's avg pooling?
+            result = tf.contrib.slim.max_pool2d(input_value, # are we sure it's not avg pooling?
                     [op.options["filter_height"], op.options["filter_width"]],
                     stride=[op.options["stride_h"], op.options["stride_w"]],
                     padding=op.options["padding"].upper()
