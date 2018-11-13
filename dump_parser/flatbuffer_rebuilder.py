@@ -116,7 +116,7 @@ def op_to_tf(op, input_value):
                     bias_initializer=bias_as_tensor,
                     use_bias=True,
                     strides=[op.options["stride_h"], op.options["stride_w"]],
-                    padding=op.options["padding"],
+                    padding=op.options["padding"].upper(),
                     activation=activation_function_to_tf(op.options["fused_activation_function"])
                    )
             subgraph.append(result)
@@ -325,3 +325,8 @@ if __name__ == "__main__":
         for i in range(5):
             print("%03d : %05.2f%% (%s)" % (indexes[i], sorted_out_tensor[i] * 100, labels[indexes[i]]))
         # print(sess.run(evaluated_tensors[2], {input_placeholder : image}))
+        # print("----------------")
+        # for tensor in graph:
+        #     print(tensor)
+        #     out_tensor = sess.run(tensor, {input_placeholder : image})
+        #     print(out_tensor.flatten().tolist()[0])

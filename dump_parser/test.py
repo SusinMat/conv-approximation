@@ -217,16 +217,39 @@ if __name__ == "__main__":
     graph = []
     input_array = np.random.random([1, 224, 224, 1])
     weight_array = np.random.random([3, 3, 1, 1])
+    bias_array = np.random.random([1])
     input_tensor = tf.placeholder(dtype=tf.float32, shape=input_array.shape)
+    # print("tf.nn.conv2d")
     tf.global_variables_initializer().run(session=sess)
     result = tf.nn.conv2d(input_tensor,
                     weight_array,
                     [1, 2, 2, 1],
-                    padding="VALID"
+                    padding="SAME"
                    )
-    # result = tf.nn.bias_add(result, op.inputs[2].data)
+    result = tf.nn.bias_add(result, bias_array)
     result = tf.nn.relu6(result)
 
     # tf.tables_initializer().run(session=sess)
-    out_tensor = sess.run(result, {input_tensor : input_array})
-    print(out_tensor)
+    nn_out_tensor = sess.run(result, {input_tensor : input_array})
+
+    # print("\ntf.layers.conv2d")
+    sess = tf.Session()
+    weight_as_tensor = tf.constant_initializer(weight_array, dtype=tf.float32)
+    bias_as_tensor = tf.constant_initializer(bias_array, dtype=tf.float32)
+
+    result = tf.layers.conv2d(input_tensor,
+            weight_array.shape[3],
+            weight_array.shape[0:2],
+            kernel_initializer=weight_as_tensor,
+            bias_initializer=bias_as_tensor,
+            use_bias=True,
+            strides=[2, 2],
+            padding="SAME",
+            activation=tf.nn.relu6
+           )
+
+    tf.global_variables_initializer().run(session=sess)
+
+    layers_out_tensor = sess.run(result, {input_tensor : input_array})
+
+    print(np.sum(layers_out_tensor - nn_out_tensor))
