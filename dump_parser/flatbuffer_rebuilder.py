@@ -194,6 +194,7 @@ def op_to_tf(op, input_value):
 
     elif op.name == "Reshape":
         result = tf.reshape(input_value, op.options["new_shape"])
+        subgraph.append(result)
 
     elif op.name == "Softmax":
         if abs(op.options["beta"] - 1.0) > 0.0001:
