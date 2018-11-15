@@ -31,7 +31,7 @@ use_layers_conv    = 0
 use_slim_depthwise = 0
 use_slim_pool      = 0
 pooling_types      = ["AVG", "MAX"]
-pooling_type       = 1 # is this the correct pooling type?
+pooling_type       = 0 # is this the correct pooling type?
 
 def read_tensor_from_image_file(file_name, input_height=224, input_width=224, input_mean=-127, input_std=127):
     input_name = "file_reader"
@@ -167,7 +167,7 @@ def op_to_tf(op, input_value):
 
     elif op.name == "Pool2D":
         if use_slim_pool:
-            result = tf.contrib.slim.max_pool2d(input_value, # are we sure it's not avg pooling?
+            result = tf.contrib.slim.avg_pool2d(input_value,
                     [op.options["filter_height"], op.options["filter_width"]],
                     stride=[op.options["stride_h"], op.options["stride_w"]],
                     padding=op.options["padding"].upper()
