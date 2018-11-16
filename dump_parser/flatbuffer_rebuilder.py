@@ -29,9 +29,8 @@ tf.contrib.lite.subprocess = subprocess
 
 use_layers_conv    = 0
 use_slim_depthwise = 0
-use_slim_pool      = 0
+use_slim_pool      = 1
 pooling_types      = ["AVG", "MAX"]
-pooling_type       = 0 # is this the correct pooling type?
 
 def read_tensor_from_image_file(file_name, input_height=224, input_width=224, input_mean=-127, input_std=127):
     input_name = "file_reader"
@@ -64,7 +63,7 @@ def fix_dictionary_enum(old_dict):
         if type(value) == str:
             if re.match(enum_pattern, value):
                 value = re.sub(r"(?P<string>\w+)\(\d+\)", r"\g<string>", value)
-            value = value.lower()
+            value = value.upper()
         new_dict[key] = value
 
     return new_dict
@@ -81,7 +80,6 @@ def type_name_to_tf(type_name):
         exit(1)
 
 def activation_function_to_tf(func_name):
-    func_name = func_name.upper()
     if func_name == "NONE":
         return None
     elif func_name == "RELU6":
@@ -116,7 +114,7 @@ def op_to_tf(op, input_value):
                     bias_initializer=bias_as_tensor,
                     use_bias=True,
                     strides=[op.options["stride_h"], op.options["stride_w"]],
-                    padding=op.options["padding"].upper(),
+                    padding=op.options["padding"],
                     activation=activation_function_to_tf(op.options["fused_activation_function"])
                    )
             subgraph.append(result)
@@ -124,7 +122,7 @@ def op_to_tf(op, input_value):
             result = tf.nn.conv2d(input_value,
                     weight_as_array,
                     [1, op.options["stride_h"], op.options["stride_w"], 1],
-                    padding=op.options["padding"].upper()
+                    padding=op.options["padding"]
                    )
             subgraph.append(result)
             result = tf.nn.bias_add(result, op.inputs[2].data)
@@ -147,7 +145,7 @@ def op_to_tf(op, input_value):
                     biases_initializer=bias_as_tensor,
                     depth_multiplier=op.options["depth_multiplier"],
                     stride=[op.options["stride_h"], op.options["stride_w"]],
-                    padding=op.options["padding"].upper(),
+                    padding=op.options["padding"],
                     activation_fn=activation_function_to_tf(op.options["fused_activation_function"])
                    )
             subgraph.append(result)
@@ -155,7 +153,7 @@ def op_to_tf(op, input_value):
             result = tf.nn.depthwise_conv2d(input_value,
                     weight_as_array,
                     [1, op.options["stride_h"], op.options["stride_w"], 1],
-                    padding=op.options["padding"].upper()
+                    padding=op.options["padding"]
                    )
             subgraph.append(result)
             result = tf.nn.bias_add(result, op.inputs[2].data)
@@ -167,17 +165,27 @@ def op_to_tf(op, input_value):
 
     elif op.name == "Pool2D":
         if use_slim_pool:
-            result = tf.contrib.slim.avg_pool2d(input_value,
-                    [op.options["filter_height"], op.options["filter_width"]],
-                    stride=[op.options["stride_h"], op.options["stride_w"]],
-                    padding=op.options["padding"].upper()
-                   )
+            if op.options["pooling_type"] == "AVG":
+                result = tf.contrib.slim.avg_pool2d(input_value,
+                        [op.options["filter_height"], op.options["filter_width"]],
+                        stride=[op.options["stride_h"], op.options["stride_w"]],
+                        padding=op.options["padding"]
+                       )
+            elif op.options["pooling_type"] == "MAX":
+                result = tf.contrib.slim.max_pool2d(input_value,
+                        [op.options["filter_height"], op.options["filter_width"]],
+                        stride=[op.options["stride_h"], op.options["stride_w"]],
+                        padding=op.options["padding"]
+                       )
+            else:
+                print("Unsupported pooling type: " + op.options["pooling_type"])
+                exit(1)
             subgraph.append(result)
         else:
             result = tf.nn.pool(input_value,
                     window_shape=[op.options["filter_height"], op.options["filter_width"]],
-                    pooling_type=pooling_types[pooling_type],
-                    padding=op.options["padding"].upper(),
+                    pooling_type=op.options["pooling_type"],
+                    padding=op.options["padding"],
                     strides=[op.options["stride_h"], op.options["stride_w"]]
                    )
             subgraph.append(result)
