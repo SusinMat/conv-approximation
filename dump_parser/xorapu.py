@@ -27,7 +27,7 @@ def get_output(command):
 
 if __name__ == "__main__":
 
-    images_per_class = 1
+    images_per_class = 10
     classes_to_test = 1000
 
     parser = argparse.ArgumentParser(description="Execute the beeswax benchmark and report accuracy.")
@@ -133,7 +133,6 @@ if __name__ == "__main__":
             match = image_path_pattern.match(line)
             if match is not None:
                 next_class = match["class_name"]
-                next_class = next_class.replace("-", "_")
             else:
                 print("Class not found in line: " + line)
                 exit(1)
