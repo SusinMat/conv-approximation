@@ -26,6 +26,10 @@ def get_output(command):
     return subprocess.run(command, shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).stdout.decode("utf-8")
 
 if __name__ == "__main__":
+
+    images_per_class = 1
+    classes_to_test = 1000
+
     parser = argparse.ArgumentParser(description="Execute the beeswax benchmark and report accuracy.")
 
     parser.add_argument("--model", "-m", help="Path to the model that will be tested. Always required.")
@@ -77,7 +81,8 @@ if __name__ == "__main__":
         print("Model file: " + model_path + " is of unsupported type " + mimetype)
         exit(1)
 
-    if not os.path.isfile(beeswax_directory + "/beeswax"):
+    beeswax_path = beeswax_directory + "/beeswax"
+    if not os.path.isfile(beeswax_path):
         print("An application named 'beeswax' was not found in " + beeswax_directory)
         exit(1)
 
@@ -87,27 +92,69 @@ if __name__ == "__main__":
         print(image_directory + " is empty")
         exit(1)
     classes = classes[1:]
+    classes = classes[0:min(len(classes), classes_to_test)]
 
-    beeswax_path = beeswax_directory + "/beeswax"
 
     # labels = [l.strip() for l in open("labels.txt", "r").readlines()]
 
     images = []
-    classes = classes[0:101]
     for c in classes:
         class_dir = image_directory + "/" + c + "/"
-        class_images = glob.glob(class_dir + "*.bmp")[0:2]
+        class_images = glob.glob(class_dir + "*.bmp")
+        class_images = class_images[0:min(len(class_images), images_per_class)]
         images += class_images
 
-    temp_list = tempfile.NamedTemporaryFile(mode="w+", prefix="tmp_", suffix=".txt", delete=True)
+    # temp_list = tempfile.NamedTemporaryFile(mode="w+", prefix="tmp_", suffix=".txt", delete=True)
+    temp_list = open("tmp_foo.txt", "w+")
     temp_list.write("\n".join(images) + "\n")
     temp_list.seek(0)
 
-    beeswax_output = [line[7:] for line in get_output(beeswax_path
-            + " -m " + model_path
-            + " -l " + "labels.txt"
-            + " -f " + temp_list.name).split('\n') if line.startswith("top-5")]
+    split_output = get_output(beeswax_path
+        + " -m " + model_path
+        + " -l " + "labels.txt"
+        + " -f " + temp_list.name).split("\n")
+    beeswax_output = [line for line in split_output if line.startswith("top-5:") or line.startswith("image-path:")]
+    # beeswax_output = [line for line in split_output]
+
+    temp_list.close()
+
+    image_path_pattern = re.compile(r"image-path: /.*/(?P<class_name>[\w'\-]+)/\w+.bmp$")
+    # top_pattern = re.compile(r"top-5: (?P<foo>( \| )?(?P<class_name>[\w']+) \(\d+\.\d+%\))*")
+    top_pattern = re.compile(r"top-5: (( \| )?[\w']+ \(\d+\.\d+%\))*")
+    top_classes_pattern = re.compile(r"([\w']+ \(\d+\.\d+%\))")
+
+    next_class = None
+
+    top1_hits = 0
+    top5_hits = 0
 
     for line in beeswax_output:
-        print(line)
-    print(len(beeswax_output))
+        if next_class is None:
+            match = image_path_pattern.match(line)
+            if match is not None:
+                next_class = match["class_name"]
+                next_class.replace("-", "_")
+            else:
+                print("Class not found in line: " + line)
+                exit(1)
+        elif next_class is not None:
+            match = top_pattern.match(line)
+            if match is not None:
+                top_classes = [match.split(" ")[0] for match in top_classes_pattern.findall(line)]
+                if len(top_classes) > 0:
+                    if next_class == top_classes[0]:
+                        top1_hits += 1
+                        top5_hits += 1
+                    elif next_class in top_classes:
+                        top5_hits += 1
+
+                next_class = None
+            else:
+                print("Top predictions not found in line: " + line)
+                exit(1)
+
+    top1_accuracy = float(top1_hits) / len(images) * 100.0
+    top5_accuracy = float(top5_hits) / len(images) * 100.0
+
+    print("Top 1 accuracy: %.02f%%" % (top1_accuracy))
+    print("Top 5 accuracy: %.02f%%" % (top5_accuracy))
