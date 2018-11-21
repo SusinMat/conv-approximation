@@ -247,7 +247,7 @@ if __name__ == "__main__":
         ops = pickle.load(open(model_path, "rb"))
     else:
         print("Model file: " + model_path + " is of unsupported type " + mimetype)
-        exit(0)
+        exit(1)
 
     for i in range(len(ops)):
         ops[i].options = fix_dictionary_enum(ops[i].options)
