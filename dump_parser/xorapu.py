@@ -11,13 +11,15 @@
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHA    LL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTER    RUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
+import glob
 import magic # package is called 'python-libmagic' in pip, and it also requires libmagic-dev to be installed in the system
 import numpy as np
 import os
 import pickle
 import re
-import sys
 import subprocess
+import sys
+import tempfile
 
 
 def get_output(command):
@@ -90,9 +92,22 @@ if __name__ == "__main__":
 
     # labels = [l.strip() for l in open("labels.txt", "r").readlines()]
 
+    images = []
+    classes = classes[0:101]
+    for c in classes:
+        class_dir = image_directory + "/" + c + "/"
+        class_images = glob.glob(class_dir + "*.bmp")[0:2]
+        images += class_images
+
+    temp_list = tempfile.NamedTemporaryFile(mode="w+", prefix="tmp_", suffix=".txt", delete=True)
+    temp_list.write("\n".join(images) + "\n")
+    temp_list.seek(0)
+
     beeswax_output = [line[7:] for line in get_output(beeswax_path
             + " -m " + model_path
             + " -l " + "labels.txt"
-            + " -i " + "scabbard.bmp").split('\n') if line.startswith("top-5")]
+            + " -f " + temp_list.name).split('\n') if line.startswith("top-5")]
 
-    print(beeswax_output)
+    for line in beeswax_output:
+        print(line)
+    print(len(beeswax_output))
