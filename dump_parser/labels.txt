@@ -1,226 +1,226 @@
 background
-tench, Tinca tinca
-goldfish, Carassius auratus
-great white shark, white shark, man-eater, man-eating shark, Carcharodon carcharias
-tiger shark, Galeocerdo cuvieri
-hammerhead, hammerhead shark
-electric ray, crampfish, numbfish, torpedo
+tench
+goldfish
+great_white_shark
+tiger_shark
+hammerhead
+electric_ray
 stingray
 cock
 hen
-ostrich, Struthio camelus
-brambling, Fringilla montifringilla
-goldfinch, Carduelis carduelis
-house finch, linnet, Carpodacus mexicanus
-junco, snowbird
-indigo bunting, indigo finch, indigo bird, Passerina cyanea
-robin, American robin, Turdus migratorius
+ostrich
+brambling
+goldfinch
+house_finch
+junco
+indigo_bunting
+robin
 bulbul
 jay
 magpie
 chickadee
-water ouzel, dipper
+water_ouzel
 kite
-bald eagle, American eagle, Haliaeetus leucocephalus
+bald_eagle
 vulture
-great grey owl, great gray owl, Strix nebulosa
-European fire salamander, Salamandra salamandra
-common newt, Triturus vulgaris
+great_grey_owl
+european_fire_salamander
+common_newt
 eft
-spotted salamander, Ambystoma maculatum
-axolotl, mud puppy, Ambystoma mexicanum
-bullfrog, Rana catesbeiana
-tree frog, tree-frog
-tailed frog, bell toad, ribbed toad, tailed toad, Ascaphus trui
-loggerhead, loggerhead turtle, Caretta caretta
-leatherback turtle, leatherback, leathery turtle, Dermochelys coriacea
-mud turtle
+spotted_salamander
+axolotl
+bullfrog
+tree_frog
+tailed_frog
+loggerhead
+leatherback_turtle
+mud_turtle
 terrapin
-box turtle, box tortoise
-banded gecko
-common iguana, iguana, Iguana iguana
-American chameleon, anole, Anolis carolinensis
-whiptail, whiptail lizard
+box_turtle
+banded_gecko
+common_iguana
+american_chameleon
+whiptail
 agama
-frilled lizard, Chlamydosaurus kingi
-alligator lizard
-Gila monster, Heloderma suspectum
-green lizard, Lacerta viridis
-African chameleon, Chamaeleo chamaeleon
-Komodo dragon, Komodo lizard, dragon lizard, giant lizard, Varanus komodoensis
-African crocodile, Nile crocodile, Crocodylus niloticus
-American alligator, Alligator mississipiensis
+frilled_lizard
+alligator_lizard
+gila_monster
+green_lizard
+african_chameleon
+komodo_dragon
+african_crocodile
+american_alligator
 triceratops
-thunder snake, worm snake, Carphophis amoenus
-ringneck snake, ring-necked snake, ring snake
-hognose snake, puff adder, sand viper
-green snake, grass snake
-king snake, kingsnake
-garter snake, grass snake
-water snake
-vine snake
-night snake, Hypsiglena torquata
-boa constrictor, Constrictor constrictor
-rock python, rock snake, Python sebae
-Indian cobra, Naja naja
-green mamba
-sea snake
-horned viper, cerastes, sand viper, horned asp, Cerastes cornutus
-diamondback, diamondback rattlesnake, Crotalus adamanteus
-sidewinder, horned rattlesnake, Crotalus cerastes
+thunder_snake
+ringneck_snake
+hognose_snake
+green_snake
+king_snake
+garter_snake
+water_snake
+vine_snake
+night_snake
+boa_constrictor
+rock_python
+indian_cobra
+green_mamba
+sea_snake
+horned_viper
+diamondback
+sidewinder
 trilobite
-harvestman, daddy longlegs, Phalangium opilio
+harvestman
 scorpion
-black and gold garden spider, Argiope aurantia
-barn spider, Araneus cavaticus
-garden spider, Aranea diademata
-black widow, Latrodectus mactans
+black_and_gold_garden_spider
+barn_spider
+garden_spider
+black_widow
 tarantula
-wolf spider, hunting spider
+wolf_spider
 tick
 centipede
-black grouse
+black_grouse
 ptarmigan
-ruffed grouse, partridge, Bonasa umbellus
-prairie chicken, prairie grouse, prairie fowl
+ruffed_grouse
+prairie_chicken
 peacock
 quail
 partridge
-African grey, African gray, Psittacus erithacus
+african_grey
 macaw
-sulphur-crested cockatoo, Kakatoe galerita, Cacatua galerita
+sulphur-crested_cockatoo
 lorikeet
 coucal
-bee eater
+bee_eater
 hornbill
 hummingbird
 jacamar
 toucan
 drake
-red-breasted merganser, Mergus serrator
+red-breasted_merganser
 goose
-black swan, Cygnus atratus
+black_swan
 tusker
-echidna, spiny anteater, anteater
-platypus, duckbill, duckbilled platypus, duck-billed platypus, Ornithorhynchus anatinus
-wallaby, brush kangaroo
-koala, koala bear, kangaroo bear, native bear, Phascolarctos cinereus
+echidna
+platypus
+wallaby
+koala
 wombat
 jellyfish
-sea anemone, anemone
-brain coral
-flatworm, platyhelminth
-nematode, nematode worm, roundworm
+sea_anemone
+brain_coral
+flatworm
+nematode
 conch
 snail
 slug
-sea slug, nudibranch
-chiton, coat-of-mail shell, sea cradle, polyplacophore
-chambered nautilus, pearly nautilus, nautilus
-Dungeness crab, Cancer magister
-rock crab, Cancer irroratus
-fiddler crab
-king crab, Alaska crab, Alaskan king crab, Alaska king crab, Paralithodes camtschatica
-American lobster, Northern lobster, Maine lobster, Homarus americanus
-spiny lobster, langouste, rock lobster, crawfish, crayfish, sea crawfish
-crayfish, crawfish, crawdad, crawdaddy
-hermit crab
+sea_slug
+chiton
+chambered_nautilus
+dungeness_crab
+rock_crab
+fiddler_crab
+king_crab
+american_lobster
+spiny_lobster
+crayfish
+hermit_crab
 isopod
-white stork, Ciconia ciconia
-black stork, Ciconia nigra
+white_stork
+black_stork
 spoonbill
 flamingo
-little blue heron, Egretta caerulea
-American egret, great white heron, Egretta albus
+little_blue_heron
+american_egret
 bittern
 crane
-limpkin, Aramus pictus
-European gallinule, Porphyrio porphyrio
-American coot, marsh hen, mud hen, water hen, Fulica americana
+limpkin
+european_gallinule
+american_coot
 bustard
-ruddy turnstone, Arenaria interpres
-red-backed sandpiper, dunlin, Erolia alpina
-redshank, Tringa totanus
+ruddy_turnstone
+red-backed_sandpiper
+redshank
 dowitcher
-oystercatcher, oyster catcher
+oystercatcher
 pelican
-king penguin, Aptenodytes patagonica
-albatross, mollymawk
-grey whale, gray whale, devilfish, Eschrichtius gibbosus, Eschrichtius robustus
-killer whale, killer, orca, grampus, sea wolf, Orcinus orca
-dugong, Dugong dugon
-sea lion
-Chihuahua
-Japanese spaniel
-Maltese dog, Maltese terrier, Maltese
-Pekinese, Pekingese, Peke
-Shih-Tzu
-Blenheim spaniel
+king_penguin
+albatross
+grey_whale
+killer_whale
+dugong
+sea_lion
+chihuahua
+japanese_spaniel
+maltese_dog
+pekinese
+shih-tzu
+blenheim_spaniel
 papillon
-toy terrier
-Rhodesian ridgeback
-Afghan hound, Afghan
-basset, basset hound
+toy_terrier
+rhodesian_ridgeback
+afghan_hound
+basset
 beagle
-bloodhound, sleuthhound
+bloodhound
 bluetick
-black-and-tan coonhound
-Walker hound, Walker foxhound
-English foxhound
+black-and-tan_coonhound
+walker_hound
+english_foxhound
 redbone
-borzoi, Russian wolfhound
-Irish wolfhound
-Italian greyhound
+borzoi
+irish_wolfhound
+italian_greyhound
 whippet
-Ibizan hound, Ibizan Podenco
-Norwegian elkhound, elkhound
-otterhound, otter hound
-Saluki, gazelle hound
-Scottish deerhound, deerhound
-Weimaraner
-Staffordshire bullterrier, Staffordshire bull terrier
-American Staffordshire terrier, Staffordshire terrier, American pit bull terrier, pit bull terrier
-Bedlington terrier
-Border terrier
-Kerry blue terrier
-Irish terrier
-Norfolk terrier
-Norwich terrier
-Yorkshire terrier
-wire-haired fox terrier
-Lakeland terrier
-Sealyham terrier, Sealyham
-Airedale, Airedale terrier
-cairn, cairn terrier
-Australian terrier
-Dandie Dinmont, Dandie Dinmont terrier
-Boston bull, Boston terrier
-miniature schnauzer
-giant schnauzer
-standard schnauzer
-Scotch terrier, Scottish terrier, Scottie
-Tibetan terrier, chrysanthemum dog
-silky terrier, Sydney silky
-soft-coated wheaten terrier
-West Highland white terrier
-Lhasa, Lhasa apso
-flat-coated retriever
-curly-coated retriever
-golden retriever
-Labrador retriever
-Chesapeake Bay retriever
-German short-haired pointer
-vizsla, Hungarian pointer
-English setter
-Irish setter, red setter
-Gordon setter
-Brittany spaniel
-clumber, clumber spaniel
-English springer, English springer spaniel
-Welsh springer spaniel
-cocker spaniel, English cocker spaniel, cocker
-Sussex spaniel
-Irish water spaniel
+ibizan_hound
+norwegian_elkhound
+otterhound
+saluki
+scottish_deerhound
+weimaraner
+staffordshire_bullterrier
+american_staffordshire_terrier
+bedlington_terrier
+border_terrier
+kerry_blue_terrier
+irish_terrier
+norfolk_terrier
+norwich_terrier
+yorkshire_terrier
+wire-haired_fox_terrier
+lakeland_terrier
+sealyham_terrier
+airedale
+cairn
+australian_terrier
+dandie_dinmont
+boston_bull
+miniature_schnauzer
+giant_schnauzer
+standard_schnauzer
+scotch_terrier
+tibetan_terrier
+silky_terrier
+soft-coated_wheaten_terrier
+west_highland_white_terrier
+lhasa
+flat-coated_retriever
+curly-coated_retriever
+golden_retriever
+labrador_retriever
+chesapeake_bay_retriever
+german_short-haired_pointer
+vizsla
+english_setter
+irish_setter
+gordon_setter
+brittany_spaniel
+clumber
+english_springer
+welsh_springer_spaniel
+cocker_spaniel
+sussex_spaniel
+irish_water_spaniel
 kuvasz
 schipperke
 groenendael
@@ -228,439 +228,439 @@ malinois
 briard
 kelpie
 komondor
-Old English sheepdog, bobtail
-Shetland sheepdog, Shetland sheep dog, Shetland
+old_english_sheepdog
+shetland_sheepdog
 collie
-Border collie
-Bouvier des Flandres, Bouviers des Flandres
-Rottweiler
-German shepherd, German shepherd dog, German police dog, alsatian
-Doberman, Doberman pinscher
-miniature pinscher
-Greater Swiss Mountain dog
-Bernese mountain dog
-Appenzeller
-EntleBucher
+border_collie
+bouvier_des_flandres
+rottweiler
+german_shepherd
+doberman
+miniature_pinscher
+greater_swiss_mountain_dog
+bernese_mountain_dog
+appenzeller
+entlebucher
 boxer
-bull mastiff
-Tibetan mastiff
-French bulldog
-Great Dane
-Saint Bernard, St Bernard
-Eskimo dog, husky
-malamute, malemute, Alaskan malamute
-Siberian husky
-dalmatian, coach dog, carriage dog
-affenpinscher, monkey pinscher, monkey dog
+bull_mastiff
+tibetan_mastiff
+french_bulldog
+great_dane
+saint_bernard
+eskimo_dog
+malamute
+siberian_husky
+dalmatian
+affenpinscher
 basenji
-pug, pug-dog
-Leonberg
-Newfoundland, Newfoundland dog
-Great Pyrenees
-Samoyed, Samoyede
-Pomeranian
-chow, chow chow
+pug
+leonberg
+newfoundland
+great_pyrenees
+samoyed
+pomeranian
+chow
 keeshond
-Brabancon griffon
-Pembroke, Pembroke Welsh corgi
-Cardigan, Cardigan Welsh corgi
-toy poodle
-miniature poodle
-standard poodle
-Mexican hairless
-timber wolf, grey wolf, gray wolf, Canis lupus
-white wolf, Arctic wolf, Canis lupus tundrarum
-red wolf, maned wolf, Canis rufus, Canis niger
-coyote, prairie wolf, brush wolf, Canis latrans
-dingo, warrigal, warragal, Canis dingo
-dhole, Cuon alpinus
-African hunting dog, hyena dog, Cape hunting dog, Lycaon pictus
-hyena, hyaena
-red fox, Vulpes vulpes
-kit fox, Vulpes macrotis
-Arctic fox, white fox, Alopex lagopus
-grey fox, gray fox, Urocyon cinereoargenteus
-tabby, tabby cat
-tiger cat
-Persian cat
-Siamese cat, Siamese
-Egyptian cat
-cougar, puma, catamount, mountain lion, painter, panther, Felis concolor
-lynx, catamount
-leopard, Panthera pardus
-snow leopard, ounce, Panthera uncia
-jaguar, panther, Panthera onca, Felis onca
-lion, king of beasts, Panthera leo
-tiger, Panthera tigris
-cheetah, chetah, Acinonyx jubatus
-brown bear, bruin, Ursus arctos
-American black bear, black bear, Ursus americanus, Euarctos americanus
-ice bear, polar bear, Ursus Maritimus, Thalarctos maritimus
-sloth bear, Melursus ursinus, Ursus ursinus
+brabancon_griffon
+pembroke
+cardigan
+toy_poodle
+miniature_poodle
+standard_poodle
+mexican_hairless
+timber_wolf
+white_wolf
+red_wolf
+coyote
+dingo
+dhole
+african_hunting_dog
+hyena
+red_fox
+kit_fox
+arctic_fox
+grey_fox
+tabby
+tiger_cat
+persian_cat
+siamese_cat
+egyptian_cat
+cougar
+lynx
+leopard
+snow_leopard
+jaguar
+lion
+tiger
+cheetah
+brown_bear
+american_black_bear
+ice_bear
+sloth_bear
 mongoose
-meerkat, mierkat
-tiger beetle
-ladybug, ladybeetle, lady beetle, ladybird, ladybird beetle
-ground beetle, carabid beetle
-long-horned beetle, longicorn, longicorn beetle
-leaf beetle, chrysomelid
-dung beetle
-rhinoceros beetle
+meerkat
+tiger_beetle
+ladybug
+ground_beetle
+long-horned_beetle
+leaf_beetle
+dung_beetle
+rhinoceros_beetle
 weevil
 fly
 bee
-ant, emmet, pismire
-grasshopper, hopper
+ant
+grasshopper
 cricket
-walking stick, walkingstick, stick insect
-cockroach, roach
-mantis, mantid
-cicada, cicala
+walking_stick
+cockroach
+mantis
+cicada
 leafhopper
-lacewing, lacewing fly
-dragonfly, darning needle, devil's darning needle, sewing needle, snake feeder, snake doctor, mosquito hawk, skeeter hawk
+lacewing
+dragonfly
 damselfly
 admiral
-ringlet, ringlet butterfly
-monarch, monarch butterfly, milkweed butterfly, Danaus plexippus
-cabbage butterfly
-sulphur butterfly, sulfur butterfly
-lycaenid, lycaenid butterfly
-starfish, sea star
-sea urchin
-sea cucumber, holothurian
-wood rabbit, cottontail, cottontail rabbit
+ringlet
+monarch
+cabbage_butterfly
+sulphur_butterfly
+lycaenid
+starfish
+sea_urchin
+sea_cucumber
+wood_rabbit
 hare
-Angora, Angora rabbit
+angora
 hamster
-porcupine, hedgehog
-fox squirrel, eastern fox squirrel, Sciurus niger
+porcupine
+fox_squirrel
 marmot
 beaver
-guinea pig, Cavia cobaya
+guinea_pig
 sorrel
 zebra
-hog, pig, grunter, squealer, Sus scrofa
-wild boar, boar, Sus scrofa
+hog
+wild_boar
 warthog
-hippopotamus, hippo, river horse, Hippopotamus amphibius
+hippopotamus
 ox
-water buffalo, water ox, Asiatic buffalo, Bubalus bubalis
+water_buffalo
 bison
-ram, tup
-bighorn, bighorn sheep, cimarron, Rocky Mountain bighorn, Rocky Mountain sheep, Ovis canadensis
-ibex, Capra ibex
+ram
+bighorn
+ibex
 hartebeest
-impala, Aepyceros melampus
+impala
 gazelle
-Arabian camel, dromedary, Camelus dromedarius
+arabian_camel
 llama
 weasel
 mink
-polecat, fitch, foulmart, foumart, Mustela putorius
-black-footed ferret, ferret, Mustela nigripes
+polecat
+black-footed_ferret
 otter
-skunk, polecat, wood pussy
+skunk
 badger
 armadillo
-three-toed sloth, ai, Bradypus tridactylus
-orangutan, orang, orangutang, Pongo pygmaeus
-gorilla, Gorilla gorilla
-chimpanzee, chimp, Pan troglodytes
-gibbon, Hylobates lar
-siamang, Hylobates syndactylus, Symphalangus syndactylus
-guenon, guenon monkey
-patas, hussar monkey, Erythrocebus patas
+three-toed_sloth
+orangutan
+gorilla
+chimpanzee
+gibbon
+siamang
+guenon
+patas
 baboon
 macaque
 langur
-colobus, colobus monkey
-proboscis monkey, Nasalis larvatus
+colobus
+proboscis_monkey
 marmoset
-capuchin, ringtail, Cebus capucinus
-howler monkey, howler
-titi, titi monkey
-spider monkey, Ateles geoffroyi
-squirrel monkey, Saimiri sciureus
-Madagascar cat, ring-tailed lemur, Lemur catta
-indri, indris, Indri indri, Indri brevicaudatus
-Indian elephant, Elephas maximus
-African elephant, Loxodonta africana
-lesser panda, red panda, panda, bear cat, cat bear, Ailurus fulgens
-giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca
-barracouta, snoek
+capuchin
+howler_monkey
+titi
+spider_monkey
+squirrel_monkey
+madagascar_cat
+indri
+indian_elephant
+african_elephant
+lesser_panda
+giant_panda
+barracouta
 eel
-coho, cohoe, coho salmon, blue jack, silver salmon, Oncorhynchus kisutch
-rock beauty, Holocanthus tricolor
-anemone fish
+coho
+rock_beauty
+anemone_fish
 sturgeon
-gar, garfish, garpike, billfish, Lepisosteus osseus
+gar
 lionfish
-puffer, pufferfish, blowfish, globefish
+puffer
 abacus
 abaya
-academic gown, academic robe, judge's robe
-accordion, piano accordion, squeeze box
-acoustic guitar
-aircraft carrier, carrier, flattop, attack aircraft carrier
+academic_gown
+accordion
+acoustic_guitar
+aircraft_carrier
 airliner
-airship, dirigible
+airship
 altar
 ambulance
-amphibian, amphibious vehicle
-analog clock
-apiary, bee house
+amphibian
+analog_clock
+apiary
 apron
-ashcan, trash can, garbage can, wastebin, ash bin, ash-bin, ashbin, dustbin, trash barrel, trash bin
-assault rifle, assault gun
-backpack, back pack, knapsack, packsack, rucksack, haversack
-bakery, bakeshop, bakehouse
-balance beam, beam
+ashcan
+assault_rifle
+backpack
+bakery
+balance_beam
 balloon
-ballpoint, ballpoint pen, ballpen, Biro
-Band Aid
+ballpoint
+band_aid
 banjo
-bannister, banister, balustrade, balusters, handrail
+bannister
 barbell
-barber chair
+barber_chair
 barbershop
 barn
 barometer
-barrel, cask
-barrow, garden cart, lawn cart, wheelbarrow
+barrel
+barrow
 baseball
 basketball
 bassinet
 bassoon
-bathing cap, swimming cap
-bath towel
-bathtub, bathing tub, bath, tub
-beach wagon, station wagon, wagon, estate car, beach waggon, station waggon, waggon
-beacon, lighthouse, beacon light, pharos
+bathing_cap
+bath_towel
+bathtub
+beach_wagon
+beacon
 beaker
-bearskin, busby, shako
-beer bottle
-beer glass
-bell cote, bell cot
+bearskin
+beer_bottle
+beer_glass
+bell_cote
 bib
-bicycle-built-for-two, tandem bicycle, tandem
-bikini, two-piece
-binder, ring-binder
-binoculars, field glasses, opera glasses
+bicycle-built-for-two
+bikini
+binder
+binoculars
 birdhouse
 boathouse
-bobsled, bobsleigh, bob
-bolo tie, bolo, bola tie, bola
-bonnet, poke bonnet
+bobsled
+bolo_tie
+bonnet
 bookcase
-bookshop, bookstore, bookstall
+bookshop
 bottlecap
 bow
-bow tie, bow-tie, bowtie
-brass, memorial tablet, plaque
-brassiere, bra, bandeau
-breakwater, groin, groyne, mole, bulwark, seawall, jetty
-breastplate, aegis, egis
+bow_tie
+brass
+brassiere
+breakwater
+breastplate
 broom
-bucket, pail
+bucket
 buckle
-bulletproof vest
-bullet train, bullet
-butcher shop, meat market
-cab, hack, taxi, taxicab
-caldron, cauldron
-candle, taper, wax light
+bulletproof_vest
+bullet_train
+butcher_shop
+cab
+caldron
+candle
 cannon
 canoe
-can opener, tin opener
+can_opener
 cardigan
-car mirror
-carousel, carrousel, merry-go-round, roundabout, whirligig
-carpenter's kit, tool kit
+car_mirror
+carousel
+carpenter's_kit
 carton
-car wheel
-cash machine, cash dispenser, automated teller machine, automatic teller machine, automated teller, automatic teller, ATM
+car_wheel
+cash_machine
 cassette
-cassette player
+cassette_player
 castle
 catamaran
-CD player
-cello, violoncello
-cellular telephone, cellular phone, cellphone, cell, mobile phone
+cd_player
+cello
+cellular_telephone
 chain
-chainlink fence
-chain mail, ring mail, mail, chain armor, chain armour, ring armor, ring armour
-chain saw, chainsaw
+chainlink_fence
+chain_mail
+chain_saw
 chest
-chiffonier, commode
-chime, bell, gong
-china cabinet, china closet
-Christmas stocking
-church, church building
-cinema, movie theater, movie theatre, movie house, picture palace
-cleaver, meat cleaver, chopper
-cliff dwelling
+chiffonier
+chime
+china_cabinet
+christmas_stocking
+church
+cinema
+cleaver
+cliff_dwelling
 cloak
-clog, geta, patten, sabot
-cocktail shaker
-coffee mug
+clog
+cocktail_shaker
+coffee_mug
 coffeepot
-coil, spiral, volute, whorl, helix
-combination lock
-computer keyboard, keypad
-confectionery, confectionary, candy store
-container ship, containership, container vessel
+coil
+combination_lock
+computer_keyboard
+confectionery
+container_ship
 convertible
-corkscrew, bottle screw
-cornet, horn, trumpet, trump
-cowboy boot
-cowboy hat, ten-gallon hat
+corkscrew
+cornet
+cowboy_boot
+cowboy_hat
 cradle
 crane
-crash helmet
+crash_helmet
 crate
-crib, cot
-Crock Pot
-croquet ball
+crib
+crock_pot
+croquet_ball
 crutch
 cuirass
-dam, dike, dyke
+dam
 desk
-desktop computer
-dial telephone, dial phone
-diaper, nappy, napkin
-digital clock
-digital watch
-dining table, board
-dishrag, dishcloth
-dishwasher, dish washer, dishwashing machine
-disk brake, disc brake
-dock, dockage, docking facility
-dogsled, dog sled, dog sleigh
+desktop_computer
+dial_telephone
+diaper
+digital_clock
+digital_watch
+dining_table
+dishrag
+dishwasher
+disk_brake
+dock
+dogsled
 dome
-doormat, welcome mat
-drilling platform, offshore rig
-drum, membranophone, tympan
+doormat
+drilling_platform
+drum
 drumstick
 dumbbell
-Dutch oven
-electric fan, blower
-electric guitar
-electric locomotive
-entertainment center
+dutch_oven
+electric_fan
+electric_guitar
+electric_locomotive
+entertainment_center
 envelope
-espresso maker
-face powder
-feather boa, boa
-file, file cabinet, filing cabinet
+espresso_maker
+face_powder
+feather_boa
+file
 fireboat
-fire engine, fire truck
-fire screen, fireguard
-flagpole, flagstaff
-flute, transverse flute
-folding chair
-football helmet
+fire_engine
+fire_screen
+flagpole
+flute
+folding_chair
+football_helmet
 forklift
 fountain
-fountain pen
+fountain_pen
 four-poster
-freight car
-French horn, horn
-frying pan, frypan, skillet
-fur coat
-garbage truck, dustcart
-gasmask, respirator, gas helmet
-gas pump, gasoline pump, petrol pump, island dispenser
+freight_car
+french_horn
+frying_pan
+fur_coat
+garbage_truck
+gasmask
+gas_pump
 goblet
 go-kart
-golf ball
-golfcart, golf cart
+golf_ball
+golfcart
 gondola
-gong, tam-tam
+gong
 gown
-grand piano, grand
-greenhouse, nursery, glasshouse
-grille, radiator grille
-grocery store, grocery, food market, market
+grand_piano
+greenhouse
+grille
+grocery_store
 guillotine
-hair slide
-hair spray
-half track
+hair_slide
+hair_spray
+half_track
 hammer
 hamper
-hand blower, blow dryer, blow drier, hair dryer, hair drier
-hand-held computer, hand-held microcomputer
-handkerchief, hankie, hanky, hankey
-hard disc, hard disk, fixed disk
-harmonica, mouth organ, harp, mouth harp
+hand_blower
+hand-held_computer
+handkerchief
+hard_disc
+harmonica
 harp
-harvester, reaper
+harvester
 hatchet
 holster
-home theater, home theatre
+home_theater
 honeycomb
-hook, claw
-hoopskirt, crinoline
-horizontal bar, high bar
-horse cart, horse-cart
+hook
+hoopskirt
+horizontal_bar
+horse_cart
 hourglass
-iPod
-iron, smoothing iron
+ipod
+iron
 jack-o'-lantern
-jean, blue jean, denim
-jeep, landrover
-jersey, T-shirt, tee shirt
-jigsaw puzzle
-jinrikisha, ricksha, rickshaw
+jean
+jeep
+jersey
+jigsaw_puzzle
+jinrikisha
 joystick
 kimono
-knee pad
+knee_pad
 knot
-lab coat, laboratory coat
+lab_coat
 ladle
-lampshade, lamp shade
-laptop, laptop computer
-lawn mower, mower
-lens cap, lens cover
-letter opener, paper knife, paperknife
+lampshade
+laptop
+lawn_mower
+lens_cap
+letter_opener
 library
 lifeboat
-lighter, light, igniter, ignitor
-limousine, limo
-liner, ocean liner
-lipstick, lip rouge
-Loafer
+lighter
+limousine
+liner
+lipstick
+loafer
 lotion
-loudspeaker, speaker, speaker unit, loudspeaker system, speaker system
-loupe, jeweler's loupe
-lumbermill, sawmill
-magnetic compass
-mailbag, postbag
-mailbox, letter box
+loudspeaker
+loupe
+lumbermill
+magnetic_compass
+mailbag
+mailbox
 maillot
-maillot, tank suit
-manhole cover
+maillot
+manhole_cover
 maraca
-marimba, xylophone
+marimba
 mask
 matchstick
 maypole
-maze, labyrinth
-measuring cup
-medicine chest, medicine cabinet
-megalith, megalithic structure
-microphone, mike
-microwave, microwave oven
-military uniform
-milk can
+maze
+measuring_cup
+medicine_chest
+megalith
+microphone
+microwave
+military_uniform
+milk_can
 minibus
-miniskirt, mini
+miniskirt
 minivan
 missile
 mitten
-mixing bowl
-mobile home, manufactured home
-Model T
+mixing_bowl
+mobile_home
+model_t
 modem
 monastery
 monitor
@@ -668,334 +668,334 @@ moped
 mortar
 mortarboard
 mosque
-mosquito net
-motor scooter, scooter
-mountain bike, all-terrain bike, off-roader
-mountain tent
-mouse, computer mouse
+mosquito_net
+motor_scooter
+mountain_bike
+mountain_tent
+mouse
 mousetrap
-moving van
+moving_van
 muzzle
 nail
-neck brace
+neck_brace
 necklace
 nipple
-notebook, notebook computer
+notebook
 obelisk
-oboe, hautboy, hautbois
-ocarina, sweet potato
-odometer, hodometer, mileometer, milometer
-oil filter
-organ, pipe organ
-oscilloscope, scope, cathode-ray oscilloscope, CRO
+oboe
+ocarina
+odometer
+oil_filter
+organ
+oscilloscope
 overskirt
 oxcart
-oxygen mask
+oxygen_mask
 packet
-paddle, boat paddle
-paddlewheel, paddle wheel
+paddle
+paddlewheel
 padlock
 paintbrush
-pajama, pyjama, pj's, jammies
+pajama
 palace
-panpipe, pandean pipe, syrinx
-paper towel
-parachute, chute
-parallel bars, bars
-park bench
-parking meter
-passenger car, coach, carriage
-patio, terrace
-pay-phone, pay-station
-pedestal, plinth, footstall
-pencil box, pencil case
-pencil sharpener
-perfume, essence
-Petri dish
+panpipe
+paper_towel
+parachute
+parallel_bars
+park_bench
+parking_meter
+passenger_car
+patio
+pay-phone
+pedestal
+pencil_box
+pencil_sharpener
+perfume
+petri_dish
 photocopier
-pick, plectrum, plectron
+pick
 pickelhaube
-picket fence, paling
-pickup, pickup truck
+picket_fence
+pickup
 pier
-piggy bank, penny bank
-pill bottle
+piggy_bank
+pill_bottle
 pillow
-ping-pong ball
+ping-pong_ball
 pinwheel
-pirate, pirate ship
-pitcher, ewer
-plane, carpenter's plane, woodworking plane
+pirate
+pitcher
+plane
 planetarium
-plastic bag
-plate rack
-plow, plough
-plunger, plumber's helper
-Polaroid camera, Polaroid Land camera
+plastic_bag
+plate_rack
+plow
+plunger
+polaroid_camera
 pole
-police van, police wagon, paddy wagon, patrol wagon, wagon, black Maria
+police_van
 poncho
-pool table, billiard table, snooker table
-pop bottle, soda bottle
-pot, flowerpot
-potter's wheel
-power drill
-prayer rug, prayer mat
+pool_table
+pop_bottle
+pot
+potter's_wheel
+power_drill
+prayer_rug
 printer
-prison, prison house
-projectile, missile
+prison
+projectile
 projector
-puck, hockey puck
-punching bag, punch bag, punching ball, punchball
+puck
+punching_bag
 purse
-quill, quill pen
-quilt, comforter, comfort, puff
-racer, race car, racing car
-racket, racquet
+quill
+quilt
+racer
+racket
 radiator
-radio, wireless
-radio telescope, radio reflector
-rain barrel
-recreational vehicle, RV, R.V.
+radio
+radio_telescope
+rain_barrel
+recreational_vehicle
 reel
-reflex camera
-refrigerator, icebox
-remote control, remote
-restaurant, eating house, eating place, eatery
-revolver, six-gun, six-shooter
+reflex_camera
+refrigerator
+remote_control
+restaurant
+revolver
 rifle
-rocking chair, rocker
+rocking_chair
 rotisserie
-rubber eraser, rubber, pencil eraser
-rugby ball
-rule, ruler
-running shoe
+rubber_eraser
+rugby_ball
+rule
+running_shoe
 safe
-safety pin
-saltshaker, salt shaker
+safety_pin
+saltshaker
 sandal
 sarong
-sax, saxophone
+sax
 scabbard
-scale, weighing machine
-school bus
+scale
+school_bus
 schooner
 scoreboard
-screen, CRT screen
+screen
 screw
 screwdriver
-seat belt, seatbelt
-sewing machine
-shield, buckler
-shoe shop, shoe-shop, shoe store
+seat_belt
+sewing_machine
+shield
+shoe_shop
 shoji
-shopping basket
-shopping cart
+shopping_basket
+shopping_cart
 shovel
-shower cap
-shower curtain
+shower_cap
+shower_curtain
 ski
-ski mask
-sleeping bag
-slide rule, slipstick
-sliding door
-slot, one-armed bandit
+ski_mask
+sleeping_bag
+slide_rule
+sliding_door
+slot
 snorkel
 snowmobile
-snowplow, snowplough
-soap dispenser
-soccer ball
+snowplow
+soap_dispenser
+soccer_ball
 sock
-solar dish, solar collector, solar furnace
+solar_dish
 sombrero
-soup bowl
-space bar
-space heater
-space shuttle
+soup_bowl
+space_bar
+space_heater
+space_shuttle
 spatula
 speedboat
-spider web, spider's web
+spider_web
 spindle
-sports car, sport car
-spotlight, spot
+sports_car
+spotlight
 stage
-steam locomotive
-steel arch bridge
-steel drum
+steam_locomotive
+steel_arch_bridge
+steel_drum
 stethoscope
 stole
-stone wall
-stopwatch, stop watch
+stone_wall
+stopwatch
 stove
 strainer
-streetcar, tram, tramcar, trolley, trolley car
+streetcar
 stretcher
-studio couch, day bed
-stupa, tope
-submarine, pigboat, sub, U-boat
-suit, suit of clothes
+studio_couch
+stupa
+submarine
+suit
 sundial
 sunglass
-sunglasses, dark glasses, shades
-sunscreen, sunblock, sun blocker
-suspension bridge
-swab, swob, mop
+sunglasses
+sunscreen
+suspension_bridge
+swab
 sweatshirt
-swimming trunks, bathing trunks
+swimming_trunks
 swing
-switch, electric switch, electrical switch
+switch
 syringe
-table lamp
-tank, army tank, armored combat vehicle, armoured combat vehicle
-tape player
+table_lamp
+tank
+tape_player
 teapot
-teddy, teddy bear
-television, television system
-tennis ball
-thatch, thatched roof
-theater curtain, theatre curtain
+teddy
+television
+tennis_ball
+thatch
+theater_curtain
 thimble
-thresher, thrasher, threshing machine
+thresher
 throne
-tile roof
+tile_roof
 toaster
-tobacco shop, tobacconist shop, tobacconist
-toilet seat
+tobacco_shop
+toilet_seat
 torch
-totem pole
-tow truck, tow car, wrecker
+totem_pole
+tow_truck
 toyshop
 tractor
-trailer truck, tractor trailer, trucking rig, rig, articulated lorry, semi
+trailer_truck
 tray
-trench coat
-tricycle, trike, velocipede
+trench_coat
+tricycle
 trimaran
 tripod
-triumphal arch
-trolleybus, trolley coach, trackless trolley
+triumphal_arch
+trolleybus
 trombone
-tub, vat
+tub
 turnstile
-typewriter keyboard
+typewriter_keyboard
 umbrella
-unicycle, monocycle
-upright, upright piano
-vacuum, vacuum cleaner
+unicycle
+upright
+vacuum
 vase
 vault
 velvet
-vending machine
+vending_machine
 vestment
 viaduct
-violin, fiddle
+violin
 volleyball
-waffle iron
-wall clock
-wallet, billfold, notecase, pocketbook
-wardrobe, closet, press
-warplane, military plane
-washbasin, handbasin, washbowl, lavabo, wash-hand basin
-washer, automatic washer, washing machine
-water bottle
-water jug
-water tower
-whiskey jug
+waffle_iron
+wall_clock
+wallet
+wardrobe
+warplane
+washbasin
+washer
+water_bottle
+water_jug
+water_tower
+whiskey_jug
 whistle
 wig
-window screen
-window shade
-Windsor tie
-wine bottle
+window_screen
+window_shade
+windsor_tie
+wine_bottle
 wing
 wok
-wooden spoon
-wool, woolen, woollen
-worm fence, snake fence, snake-rail fence, Virginia fence
+wooden_spoon
+wool
+worm_fence
 wreck
 yawl
 yurt
-web site, website, internet site, site
-comic book
-crossword puzzle, crossword
-street sign
-traffic light, traffic signal, stoplight
-book jacket, dust cover, dust jacket, dust wrapper
+web_site
+comic_book
+crossword_puzzle
+street_sign
+traffic_light
+book_jacket
 menu
 plate
 guacamole
 consomme
-hot pot, hotpot
+hot_pot
 trifle
-ice cream, icecream
-ice lolly, lolly, lollipop, popsicle
-French loaf
-bagel, beigel
+ice_cream
+ice_lolly
+french_loaf
+bagel
 pretzel
 cheeseburger
-hotdog, hot dog, red hot
-mashed potato
-head cabbage
+hotdog
+mashed_potato
+head_cabbage
 broccoli
 cauliflower
-zucchini, courgette
-spaghetti squash
-acorn squash
-butternut squash
-cucumber, cuke
-artichoke, globe artichoke
-bell pepper
+zucchini
+spaghetti_squash
+acorn_squash
+butternut_squash
+cucumber
+artichoke
+bell_pepper
 cardoon
 mushroom
-Granny Smith
+granny_smith
 strawberry
 orange
 lemon
 fig
-pineapple, ananas
+pineapple
 banana
-jackfruit, jak, jack
-custard apple
+jackfruit
+custard_apple
 pomegranate
 hay
 carbonara
-chocolate sauce, chocolate syrup
+chocolate_sauce
 dough
-meat loaf, meatloaf
-pizza, pizza pie
+meat_loaf
+pizza
 potpie
 burrito
-red wine
+red_wine
 espresso
 cup
 eggnog
 alp
 bubble
-cliff, drop, drop-off
-coral reef
+cliff
+coral_reef
 geyser
-lakeside, lakeshore
-promontory, headland, head, foreland
-sandbar, sand bar
-seashore, coast, seacoast, sea-coast
-valley, vale
+lakeside
+promontory
+sandbar
+seashore
+valley
 volcano
-ballplayer, baseball player
-groom, bridegroom
-scuba diver
+ballplayer
+groom
+scuba_diver
 rapeseed
 daisy
-yellow lady's slipper, yellow lady-slipper, Cypripedium calceolus, Cypripedium parviflorum
+yellow_lady's_slipper
 corn
 acorn
-hip, rose hip, rosehip
-buckeye, horse chestnut, conker
-coral fungus
+hip
+buckeye
+coral_fungus
 agaric
 gyromitra
-stinkhorn, carrion fungus
+stinkhorn
 earthstar
-hen-of-the-woods, hen of the woods, Polyporus frondosus, Grifola frondosa
+hen-of-the-woods
 bolete
-ear, spike, capitulum
-toilet tissue, toilet paper, bathroom tissue
+ear
+toilet_tissue

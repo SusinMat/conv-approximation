@@ -20,6 +20,9 @@ import sys
 import subprocess
 
 
+def get_output(command):
+    return subprocess.run(command, shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).stdout.decode("utf-8")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Execute the beeswax benchmark and report accuracy.")
 
@@ -60,7 +63,7 @@ if __name__ == "__main__":
 
 
     if None in [image_directory, beeswax_directory]:
-        print("Error: One or more paths were not set previously.")
+        print("Error: One or more paths were not set previously")
         exit(1)
 
     mimetype = magic.Magic().from_file(model_path)
@@ -68,8 +71,28 @@ if __name__ == "__main__":
     basename = os.path.basename(model_path)
     (filename, file_extension) = os.path.splitext(basename)
 
-    if (mimetype == "application/octet-stream") and (file_extension == ".tflite"):
-        pass
-    else:
+    if not (mimetype == "application/octet-stream" and file_extension == ".tflite"):
         print("Model file: " + model_path + " is of unsupported type " + mimetype)
         exit(1)
+
+    if not os.path.isfile(beeswax_directory + "/beeswax"):
+        print("An application named 'beeswax' was not found in " + beeswax_directory)
+        exit(1)
+
+    image_directory = os.path.abspath(image_directory)
+    classes = [os.path.basename(d[0]) for d in os.walk(image_directory)]
+    if len(classes) <= 1:
+        print(image_directory + " is empty")
+        exit(1)
+    classes = classes[1:]
+
+    beeswax_path = beeswax_directory + "/beeswax"
+
+    # labels = [l.strip() for l in open("labels.txt", "r").readlines()]
+
+    beeswax_output = [line[7:] for line in get_output(beeswax_path
+            + " -m " + model_path
+            + " -l " + "labels.txt"
+            + " -i " + "scabbard.bmp").split('\n') if line.startswith("top-5")]
+
+    print(beeswax_output)
