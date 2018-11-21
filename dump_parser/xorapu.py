@@ -133,7 +133,7 @@ if __name__ == "__main__":
             match = image_path_pattern.match(line)
             if match is not None:
                 next_class = match["class_name"]
-                next_class.replace("-", "_")
+                next_class = next_class.replace("-", "_")
             else:
                 print("Class not found in line: " + line)
                 exit(1)
