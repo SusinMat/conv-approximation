@@ -119,6 +119,11 @@ def count_hits(output):
     return [top1_hits, top5_hits]
 
 
+def batchify(original_list, batch_size):
+    for i in range(0, (len(original_list) // batch_size) + (len(original_list) % batch_size > 0)):
+        yield original_list[i * batch_size : min((i + 1) * batch_size, len(original_list))]
+    return
+
 def test_model(model_path, image_directory, beeswax_directory, classes_to_test=1000, images_per_class=10000, batch_size=100, threads=1, seed=None):
 
     if None in [image_directory, beeswax_directory]:
@@ -144,8 +149,7 @@ def test_model(model_path, image_directory, beeswax_directory, classes_to_test=1
     images = read_images(classes, image_directory, images_per_class)
 
     split_output = []
-    for i in range(0, (len(images) // batch_size) + (len(images) % batch_size > 0)):
-        subset = images[i * batch_size : min((i + 1) * batch_size, len(images))]
+    for subset in batchify(images, batch_size):
         split_output += run_beeswax(beeswax_path, model_path, subset)
 
     # [print(line) for line in split_output]
@@ -161,8 +165,8 @@ def test_model(model_path, image_directory, beeswax_directory, classes_to_test=1
 
 if __name__ == "__main__":
 
-    images_per_class = 80
-    classes_to_test = 40
+    images_per_class = 20
+    classes_to_test = 20
 
     # Preparing environment
 
