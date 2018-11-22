@@ -101,7 +101,7 @@ def count_hits(output):
             match = top_pattern.match(line)
             if match is not None:
                 top_classes = [match.split(" ")[0] for match in top_classes_pattern.findall(line)]
-                print("Guessed: " + str(top_classes) + " for class " + next_class.upper())
+                # print("Guessed: " + str(top_classes) + " for class " + next_class.upper())
                 if len(top_classes) > 0:
                     if next_class == top_classes[0]:
                         top1_hits += 1
@@ -119,12 +119,19 @@ def count_hits(output):
     return [top1_hits, top5_hits]
 
 
-def test_model(model_path, image_directory, beeswax_directory, classes_to_test=1000, images_per_class=10000, batch_size=1000, threads=1, seed=None):
+def test_model(model_path, image_directory, beeswax_directory, classes_to_test=1000, images_per_class=10000, batch_size=100, threads=1, seed=None):
 
     if None in [image_directory, beeswax_directory]:
-        print("Error: One or more paths were not set previously.")
-        print("Run ./xorapu.py -h for info on how to set them.")
-        exit(1)
+        paths_filename = "xorapu_paths.pkl"
+
+        if os.path.isfile(paths_filename):
+            paths = pickle.load(open(paths_filename, "rb"))
+            image_directory = paths["image_directory"]
+            beeswax_directory = paths["beeswax_directory"]
+        else:
+            print("Error: One or more paths were not set previously, %s was not found." % (paths_filename))
+            print("Run ./xorapu.py -h for info on how to set them.")
+            exit(1)
 
     check_model(model_path)
 
@@ -136,17 +143,16 @@ def test_model(model_path, image_directory, beeswax_directory, classes_to_test=1
 
     images = read_images(classes, image_directory, images_per_class)
 
-    split_output = run_beeswax(beeswax_path, model_path, images)
+    split_output = []
+    for i in range(0, (len(images) // batch_size) + (len(images) % batch_size > 0)):
+        subset = images[i * batch_size : min((i + 1) * batch_size, len(images))]
+        split_output += run_beeswax(beeswax_path, model_path, subset)
 
-    for line in split_output:
-        print(line)
-        pass
+    # [print(line) for line in split_output]
 
     filtered_output = filter_output(split_output)
 
-
     (top1_hits, top5_hits) = count_hits(filtered_output)
-
 
     top1_accuracy = float(top1_hits) / len(images) * 100.0
     top5_accuracy = float(top5_hits) / len(images) * 100.0
@@ -155,8 +161,8 @@ def test_model(model_path, image_directory, beeswax_directory, classes_to_test=1
 
 if __name__ == "__main__":
 
-    images_per_class = 10
-    classes_to_test = 10
+    images_per_class = 80
+    classes_to_test = 40
 
     # Preparing environment
 
@@ -180,8 +186,6 @@ if __name__ == "__main__":
             image_directory = paths["image_directory"]
         if "beeswax_directory" in paths.keys():
             beeswax_directory = paths["beeswax_directory"]
-    else:
-        pass
 
     model_path = args.model
     if image_directory == None and args.images is not None:
