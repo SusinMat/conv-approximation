@@ -21,14 +21,144 @@ import subprocess
 import sys
 import tempfile
 
+def check_model(model_path):
+    mimetype = magic.Magic().from_file(model_path)
+
+    basename = os.path.basename(model_path)
+    (filename, file_extension) = os.path.splitext(basename)
+
+    if not (mimetype == "application/octet-stream" and file_extension == ".tflite"):
+        print("Model file: " + model_path + " is of unsupported type " + mimetype)
+        exit(1)
+
+def check_beeswax(beeswax_path):
+    if not os.path.isfile(beeswax_path):
+        print("An application named 'beeswax' was not found in " + beeswax_directory)
+        exit(1)
+
+def read_classes(image_directory, classes_to_test):
+    classes = [os.path.basename(d[0]) for d in os.walk(image_directory)]
+    if len(classes) <= 1:
+        print(image_directory + " is empty")
+        exit(1)
+    classes = classes[1:]
+    classes = classes[0:min(len(classes), classes_to_test)]
+    return classes
+
+def read_images(classes, image_directory, images_per_class):
+    images = []
+    for c in classes:
+        class_dir = image_directory + "/" + c + "/"
+        class_images = glob.glob(class_dir + "*.bmp")
+        class_images = class_images[0:min(len(class_images), images_per_class)]
+        images += class_images
+    return images
 
 def get_output(command):
     return subprocess.run(command, shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).stdout.decode("utf-8")
 
+def create_temp_list(images):
+    temp_list = tempfile.NamedTemporaryFile(mode="w+", prefix="tmp_", suffix=".txt", delete=True)
+    # temp_list = open("tmp_foo.txt", "w+")
+    temp_list.write("\n".join(images) + "\n")
+    temp_list.seek(0)
+    return temp_list
+
+def run_beeswax(beeswax_path, model_path, images):
+    temp_list = create_temp_list(images)
+    split_output = get_output(beeswax_path
+        + " -m " + model_path
+        + " -l " + "labels.txt"
+        + " -f " + temp_list.name).split("\n")
+
+    temp_list.close()
+
+    return split_output
+
+def filter_output(output):
+    return [line for line in output if line.startswith("top-5:") or line.startswith("image-path:")]
+
+def count_hits(output):
+    top1_hits = 0
+    top5_hits = 0
+
+    image_path_pattern = re.compile(r"image-path: /.*/(?P<class_name>[\w'\-]+)/\w+.bmp$")
+    # top_pattern = re.compile(r"top-5: (?P<foo>( \| )?(?P<class_name>[\w']+) \(\d+\.\d+%\))*")
+    top_pattern = re.compile(r"top-5: (( \| )?[\w'\-]+ \(\d+\.\d+%\))*")
+    top_classes_pattern = re.compile(r"([\w'\-]+ \(\d+\.\d+%\))")
+
+    next_class = None
+
+    for line in output:
+        if next_class is None:
+            match = image_path_pattern.match(line)
+            if match is not None:
+                next_class = match["class_name"]
+            else:
+                print("Class not found in line: " + line)
+                exit(1)
+        elif next_class is not None:
+            match = top_pattern.match(line)
+            if match is not None:
+                top_classes = [match.split(" ")[0] for match in top_classes_pattern.findall(line)]
+                print("Guessed: " + str(top_classes) + " for class " + next_class.upper())
+                if len(top_classes) > 0:
+                    if next_class == top_classes[0]:
+                        top1_hits += 1
+                        top5_hits += 1
+                    elif next_class in top_classes:
+                        top5_hits += 1
+                else:
+                    print("Error, the following line does not contain a top list:\n" + line)
+
+                next_class = None
+            else:
+                print("Top predictions not found in line: " + line)
+                exit(1)
+
+    return [top1_hits, top5_hits]
+
+
+def test_model(model_path, image_directory, beeswax_directory, classes_to_test=1000, images_per_class=10000, batch_size=1000, threads=1, seed=None):
+
+    if None in [image_directory, beeswax_directory]:
+        print("Error: One or more paths were not set previously.")
+        print("Run ./xorapu.py -h for info on how to set them.")
+        exit(1)
+
+    check_model(model_path)
+
+    beeswax_path = beeswax_directory + "/beeswax"
+    check_beeswax(beeswax_path)
+
+    image_directory = os.path.abspath(image_directory)
+    classes = read_classes(image_directory, classes_to_test)
+
+    images = read_images(classes, image_directory, images_per_class)
+
+    split_output = run_beeswax(beeswax_path, model_path, images)
+
+    for line in split_output:
+        print(line)
+        pass
+
+    filtered_output = filter_output(split_output)
+
+
+    (top1_hits, top5_hits) = count_hits(filtered_output)
+
+
+    top1_accuracy = float(top1_hits) / len(images) * 100.0
+    top5_accuracy = float(top5_hits) / len(images) * 100.0
+
+    return [top1_accuracy, top5_accuracy]
+
 if __name__ == "__main__":
 
     images_per_class = 10
-    classes_to_test = 1000
+    classes_to_test = 10
+
+    # Preparing environment
 
     parser = argparse.ArgumentParser(description="Execute the beeswax benchmark and report accuracy.")
 
@@ -59,101 +189,22 @@ if __name__ == "__main__":
     if beeswax_directory == None and args.beeswax is not None:
         beeswax_directory = args.beeswax
 
-    if model_path is None:
-        print("Error: path to the model is always required")
-        exit(1)
 
     paths = {"image_directory":image_directory, "beeswax_directory":beeswax_directory}
     with open(paths_filename, "wb") as f:
         pickle.dump(paths, f)
 
+    if model_path is None:
+        print("Path to model not set. Saved dataset and beeswax directories. Now exiting.")
+        exit(0)
 
-    if None in [image_directory, beeswax_directory]:
-        print("Error: One or more paths were not set previously")
-        exit(1)
+    # Done preparing environment
 
-    mimetype = magic.Magic().from_file(model_path)
+    (top1_accuracy, top5_accuracy) = test_model(model_path, image_directory, beeswax_directory, classes_to_test=classes_to_test, images_per_class=images_per_class)
 
-    basename = os.path.basename(model_path)
-    (filename, file_extension) = os.path.splitext(basename)
-
-    if not (mimetype == "application/octet-stream" and file_extension == ".tflite"):
-        print("Model file: " + model_path + " is of unsupported type " + mimetype)
-        exit(1)
-
-    beeswax_path = beeswax_directory + "/beeswax"
-    if not os.path.isfile(beeswax_path):
-        print("An application named 'beeswax' was not found in " + beeswax_directory)
-        exit(1)
-
-    image_directory = os.path.abspath(image_directory)
-    classes = [os.path.basename(d[0]) for d in os.walk(image_directory)]
-    if len(classes) <= 1:
-        print(image_directory + " is empty")
-        exit(1)
-    classes = classes[1:]
-    classes = classes[0:min(len(classes), classes_to_test)]
-
-
-    # labels = [l.strip() for l in open("labels.txt", "r").readlines()]
-
-    images = []
-    for c in classes:
-        class_dir = image_directory + "/" + c + "/"
-        class_images = glob.glob(class_dir + "*.bmp")
-        class_images = class_images[0:min(len(class_images), images_per_class)]
-        images += class_images
-
-    # temp_list = tempfile.NamedTemporaryFile(mode="w+", prefix="tmp_", suffix=".txt", delete=True)
-    temp_list = open("tmp_foo.txt", "w+")
-    temp_list.write("\n".join(images) + "\n")
-    temp_list.seek(0)
-
-    split_output = get_output(beeswax_path
-        + " -m " + model_path
-        + " -l " + "labels.txt"
-        + " -f " + temp_list.name).split("\n")
-    beeswax_output = [line for line in split_output if line.startswith("top-5:") or line.startswith("image-path:")]
-    # beeswax_output = [line for line in split_output]
-
-    temp_list.close()
-
-    image_path_pattern = re.compile(r"image-path: /.*/(?P<class_name>[\w'\-]+)/\w+.bmp$")
-    # top_pattern = re.compile(r"top-5: (?P<foo>( \| )?(?P<class_name>[\w']+) \(\d+\.\d+%\))*")
-    top_pattern = re.compile(r"top-5: (( \| )?[\w']+ \(\d+\.\d+%\))*")
-    top_classes_pattern = re.compile(r"([\w']+ \(\d+\.\d+%\))")
-
-    next_class = None
-
-    top1_hits = 0
-    top5_hits = 0
-
-    for line in beeswax_output:
-        if next_class is None:
-            match = image_path_pattern.match(line)
-            if match is not None:
-                next_class = match["class_name"]
-            else:
-                print("Class not found in line: " + line)
-                exit(1)
-        elif next_class is not None:
-            match = top_pattern.match(line)
-            if match is not None:
-                top_classes = [match.split(" ")[0] for match in top_classes_pattern.findall(line)]
-                if len(top_classes) > 0:
-                    if next_class == top_classes[0]:
-                        top1_hits += 1
-                        top5_hits += 1
-                    elif next_class in top_classes:
-                        top5_hits += 1
-
-                next_class = None
-            else:
-                print("Top predictions not found in line: " + line)
-                exit(1)
-
-    top1_accuracy = float(top1_hits) / len(images) * 100.0
-    top5_accuracy = float(top5_hits) / len(images) * 100.0
+    # Printing result
 
     print("Top 1 accuracy: %.02f%%" % (top1_accuracy))
     print("Top 5 accuracy: %.02f%%" % (top5_accuracy))
+
+    # Done printing result
