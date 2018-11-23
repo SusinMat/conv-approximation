@@ -82,18 +82,20 @@ def count_hits(output):
     top1_hits = 0
     top5_hits = 0
 
-    image_path_pattern = re.compile(r"image-path: /.*/(?P<class_name>[\w'\-]+)/\w+.bmp$")
+    image_path_pattern = re.compile(r"image-path: (?P<image_path>/.*/(?P<class_name>[\w'\-]+)/\w+\.bmp)$")
     # top_pattern = re.compile(r"top-5: (?P<foo>( \| )?(?P<class_name>[\w']+) \(\d+\.\d+%\))*")
-    top_pattern = re.compile(r"top-5: (( \| )?[\w'\-]+ \(\d+\.\d+%\))*")
+    top_pattern = re.compile(r"top-5: ?(( \| )?[\w'\-]+ \(\d+\.\d+%\))*")
     top_classes_pattern = re.compile(r"([\w'\-]+ \(\d+\.\d+%\))")
 
     next_class = None
+    image_path = None
 
     for line in output:
         if next_class is None:
             match = image_path_pattern.match(line)
             if match is not None:
                 next_class = match["class_name"]
+                image_path = match["image_path"]
             else:
                 print("Class not found in line: " + line)
                 exit(1)
@@ -106,15 +108,15 @@ def count_hits(output):
                     if next_class == top_classes[0]:
                         top1_hits += 1
                         top5_hits += 1
+                        # print(image_path)
                     elif next_class in top_classes:
                         top5_hits += 1
                 else:
-                    print("Error, the following line does not contain a top list:\n" + line)
-
+                    print("The following line does not contain a top list:\n" + line)
                 next_class = None
             else:
                 print("Top predictions not found in line: " + line)
-                exit(1)
+                # exit(1)
 
     return [top1_hits, top5_hits]
 
@@ -124,7 +126,7 @@ def batchify(original_list, batch_size):
         yield original_list[i * batch_size : min((i + 1) * batch_size, len(original_list))]
     return
 
-def test_model(model_path, image_directory, beeswax_directory, classes_to_test=1000, images_per_class=10000, batch_size=100, threads=1, seed=None):
+def test_model(model_path, image_directory, beeswax_directory, classes_to_test=1000, images_per_class=10000, batch_size=200, threads=1, seed=None):
 
     if None in [image_directory, beeswax_directory]:
         paths_filename = "xorapu_paths.pkl"
@@ -148,6 +150,8 @@ def test_model(model_path, image_directory, beeswax_directory, classes_to_test=1
 
     images = read_images(classes, image_directory, images_per_class)
 
+    # print(len(images))
+
     split_output = []
     for subset in batchify(images, batch_size):
         split_output += run_beeswax(beeswax_path, model_path, subset)
@@ -165,8 +169,8 @@ def test_model(model_path, image_directory, beeswax_directory, classes_to_test=1
 
 if __name__ == "__main__":
 
-    images_per_class = 20
-    classes_to_test = 20
+    images_per_class = 1
+    classes_to_test = 100
 
     # Preparing environment
 
@@ -192,9 +196,9 @@ if __name__ == "__main__":
             beeswax_directory = paths["beeswax_directory"]
 
     model_path = args.model
-    if image_directory == None and args.images is not None:
+    if args.images is not None:
         image_directory = args.images
-    if beeswax_directory == None and args.beeswax is not None:
+    if args.beeswax is not None:
         beeswax_directory = args.beeswax
 
 
