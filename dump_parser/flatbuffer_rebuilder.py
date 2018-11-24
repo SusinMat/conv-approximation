@@ -242,6 +242,10 @@ if __name__ == "__main__":
 
     mimetype = magic.Magic().from_file(model_path)
 
+    # if mimetype == "text/plain":
+    #     model_path = dump_parser.text_to_pickle(model_path, filename)
+    #     mimetype = magic.Magic().from_file(model_path)
+
     basename = os.path.basename(model_path)
     (filename, file_extension) = os.path.splitext(basename)
 
@@ -259,20 +263,8 @@ if __name__ == "__main__":
     op_names = [op.name for op in ops]
     tensors = [item for sublist in [op.inputs + op.outputs for op in ops] for item in sublist]
 
-    # for i in range(len(ops)):
-    #     op = ops[i]
-    #     op_name = op.name
-    #     op_inputs = [tensor for tensor in op.inputs]
-    #     op_outputs = [tensor for tensor in op.outputs]
-    #     print("Name: %s, inputs: %s, outputs: %s, options: %s" % (op_name, str([tensor.index for tensor in op_inputs]), str([tensor.index for tensor in op_outputs]), op.options))
-    #     for tensor in op_inputs:
-    #         print(" * --> input " + str(tensor.index) + " : s=" + str(tensor.shape) + " <--")
-    #     for tensor in op_outputs:
-    #         print(" * <-- output " + str(tensor.index) + " : s=" + str(tensor.shape) + " -->")
-
     tensors.sort(key=lambda item: item.index)
     tensors = remove_successive_duplicates(tensors)
-    # print([tensor.index for tensor in tensors])
 
     tf_tensors = []
     for tensor in tensors:

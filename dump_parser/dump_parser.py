@@ -33,6 +33,166 @@ class State(enum.Enum):
     OUTPUT_HEADER = enum.auto()
     OUTPUT_INFO = enum.auto()
 
+def text_to_pickle(input_path, filename):
+    f = open(input_path, 'r')
+    dump = [line for line in [line.strip() for line in f.readlines()] if line != ""]
+    f.close()
+
+    # match portion of the 'tensor line' that is common to input and output tensors
+    common_info_pattern = r"\* (?P<index>\d+):s=(?P<shape>\[\d+(, \d+){0,3}\]),t=(?P<data_type>\w+)"
+
+    # match the first line
+    start_pattern = re.compile(r"Operators:")
+    # match the 'op line'
+    op_pattern = re.compile(r"builtin_op: (?P<op_name>\w+)\((?P<index>\d+)\), options: (?P<options>{ [\w:\"\-\.\(\)\[\],\s]*}), inputs:(?P<inputs>( \d+)+| ), outputs:(?P<outputs>( \d+)+| )$")
+    # match the line that introduces the list of input tensors
+    input_header_pattern = re.compile(r"\+ input tensors:")
+    # match input tensors, minus the data (weights), which end with 'd=', introducing the data (weights)
+    input_info_pattern = re.compile(common_info_pattern + r",d=$")
+    # match any non-empty line, for use with the data (weight) line
+    tensor_data_pattern = re.compile(r"(?P<data>.+)$")
+    # match the line that introduces the list of output tensors
+    output_header_pattern = re.compile(r"\+ output tensors:")
+    # match input tensors, which don't feature data (weights)
+    output_info_pattern = re.compile(common_info_pattern + r"$")
+
+    state = State.START
+    i = 0
+    ops = []
+    shape = None
+    current_op = None
+    current_input_tensor = None
+    current_output_tensor = None
+    max_error_line_length = 160
+    while(i < len(dump)):
+        line = dump[i]
+        redo = False # if True, loop restarts without incrementing i, emulating Perl's 'redo' statement
+
+        if state == State.START:
+            match = start_pattern.match(line)
+            if match == None:
+                print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
+                exit(1)
+            state = state.OP
+
+        elif state == State.OP:
+            match = op_pattern.match(line)
+            if match == None:
+                print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
+                exit(1)
+            state = State.INPUT_HEADER
+            index = match.group("index")
+            index = int(index)
+            op_name = match.group("op_name")
+            if op_name.endswith("Options"):
+                op_name = re.sub(r"Options$", "", op_name)
+            else:
+                print("Operator name " + op_name + "does not end with 'Options'")
+                exit(1)
+            options = match.group("options").strip()
+            # special case: values that such as NONE(0) and SAME(1) that come from enums must be treated as strings
+            options = re.sub(r":(?P<value>(\w+\(\d+\)))", r":'\g<value>'", options)
+            # keys are strings
+            options = re.sub(r"(?P<key>\w+):", r"'\g<key>':", options)
+            options = ast.literal_eval(options)
+            inputs = match.group("inputs").strip().split(" ")
+            outputs = match.group("outputs").strip().split(" ")
+            if current_op != None:
+                ops.append(current_op)
+            current_op = Op()
+            current_op.name = op_name
+            current_op.index = index
+            current_op.options = options
+
+        elif state == State.INPUT_HEADER:
+            match = input_header_pattern.match(line)
+            if match == None:
+                print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
+                exit(1)
+            state = State.INPUT_INFO
+
+        elif state == State.INPUT_INFO:
+            match = input_info_pattern.match(line)
+            if match != None: # matched input info
+                state = State.TENSOR_DATA
+                index = match.group("index")
+                index = int(index)
+                shape = match.group("shape")
+                shape = ast.literal_eval(shape)
+                data_type = match.group("data_type")
+                if current_input_tensor != None:
+                    current_op.inputs.append(current_input_tensor)
+                current_input_tensor = Tensor()
+                current_input_tensor.index = index
+                current_input_tensor.shape = shape
+                current_input_tensor.type_name = data_type
+            else:
+                state = State.OUTPUT_HEADER
+                if current_input_tensor != None:
+                    current_op.inputs.append(current_input_tensor)
+                current_input_tensor = None
+                match = output_header_pattern.match(line)
+                if match == None:
+                    print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
+                    exit(1)
+                redo = True
+
+        elif state == State.TENSOR_DATA:
+            match = tensor_data_pattern.match(line)
+            if match == None:
+                print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
+                exit(1)
+            data = match.group("data")
+            if data.startswith("Empty"):
+                data = None
+            else:
+                data = ast.literal_eval(data)
+                data = np.asarray(data, dtype=getattr(np, current_input_tensor.type_name.lower()))
+            current_input_tensor.data = data
+            state = State.INPUT_INFO
+
+        elif state == State.OUTPUT_HEADER:
+            match = output_header_pattern.match(line)
+            if match == None:
+                print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
+                exit(1)
+            state = State.OUTPUT_INFO
+
+        elif state == State.OUTPUT_INFO:
+            match = output_info_pattern.match(line)
+            if match != None: # matched output info
+                state = State.OUTPUT_INFO
+                index = match.group("index")
+                index = int(index)
+                shape = match.group("shape")
+                shape = ast.literal_eval(shape)
+                data_type = match.group("data_type")
+                current_output_tensor = Tensor()
+                current_output_tensor.index = index
+                current_output_tensor.shape = shape
+                current_output_tensor.type_name = data_type
+                current_op.outputs.append(current_output_tensor)
+            else:
+                state = State.OP
+                match = op_pattern.match(line)
+                if match == None:
+                    print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
+                    exit(1)
+                redo = True
+
+        if not redo:
+            i += 1
+    if current_op != None:
+        ops.append(current_op)
+        current_op = None
+        current_input_tensor = None
+        current_output_tensor = None
+
+    model_filename = filename + ".pkl"
+    pickle.dump(ops, open(model_filename, "wb"))
+    return model_filename
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parse the output of the Neural Network Transpiler (NNT) weight dump function.")
 
@@ -50,159 +210,7 @@ if __name__ == "__main__":
     ops = []
 
     if mimetype == "text/plain":
-        f = open(input_path, 'r')
-        dump = [line for line in [line.strip() for line in f.readlines()] if line != ""]
-        f.close()
-
-        # match portion of the 'tensor line' that is common to input and output tensors
-        common_info_pattern = r"\* (?P<index>\d+):s=(?P<shape>\[\d+(, \d+){0,3}\]),t=(?P<data_type>\w+)"
-
-        # match the first line
-        start_pattern = re.compile(r"Operators:")
-        # match the 'op line'
-        op_pattern = re.compile(r"builtin_op: (?P<op_name>\w+)\((?P<index>\d+)\), options: (?P<options>{ [\w:\"\-\.\(\)\[\],\s]*}), inputs:(?P<inputs>( \d+)+| ), outputs:(?P<outputs>( \d+)+| )$")
-        # match the line that introduces the list of input tensors
-        input_header_pattern = re.compile(r"\+ input tensors:")
-        # match input tensors, minus the data (weights), which end with 'd=', introducing the data (weights)
-        input_info_pattern = re.compile(common_info_pattern + r",d=$")
-        # match any non-empty line, for use with the data (weight) line
-        tensor_data_pattern = re.compile(r"(?P<data>.+)$")
-        # match the line that introduces the list of output tensors
-        output_header_pattern = re.compile(r"\+ output tensors:")
-        # match input tensors, which don't feature data (weights)
-        output_info_pattern = re.compile(common_info_pattern + r"$")
-
-        state = State.START
-        i = 0
-        shape = None
-        current_op = None
-        current_input_tensor = None
-        current_output_tensor = None
-        max_error_line_length = 160
-        while(i < len(dump)):
-            line = dump[i]
-            redo = False # if True, loop restarts without incrementing i, emulating Perl's 'redo' statement
-
-            if state == State.START:
-                match = start_pattern.match(line)
-                if match == None:
-                    print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
-                    exit(1)
-                state = state.OP
-
-            elif state == State.OP:
-                match = op_pattern.match(line)
-                if match == None:
-                    print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
-                    exit(1)
-                state = State.INPUT_HEADER
-                index = match.group("index")
-                index = int(index)
-                op_name = match.group("op_name")
-                if op_name.endswith("Options"):
-                    op_name = re.sub(r"Options$", "", op_name)
-                else:
-                    print("Operator name " + op_name + "does not end with 'Options'")
-                    exit(1)
-                options = match.group("options").strip()
-                # special case: values that such as NONE(0) and SAME(1) that come from enums must be treated as strings
-                options = re.sub(r":(?P<value>(\w+\(\d+\)))", r":'\g<value>'", options)
-                # keys are strings
-                options = re.sub(r"(?P<key>\w+):", r"'\g<key>':", options)
-                options = ast.literal_eval(options)
-                inputs = match.group("inputs").strip().split(" ")
-                outputs = match.group("outputs").strip().split(" ")
-                if current_op != None:
-                    ops.append(current_op)
-                current_op = Op()
-                current_op.name = op_name
-                current_op.index = index
-                current_op.options = options
-
-            elif state == State.INPUT_HEADER:
-                match = input_header_pattern.match(line)
-                if match == None:
-                    print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
-                    exit(1)
-                state = State.INPUT_INFO
-
-            elif state == State.INPUT_INFO:
-                match = input_info_pattern.match(line)
-                if match != None: # matched input info
-                    state = State.TENSOR_DATA
-                    index = match.group("index")
-                    index = int(index)
-                    shape = match.group("shape")
-                    shape = ast.literal_eval(shape)
-                    data_type = match.group("data_type")
-                    if current_input_tensor != None:
-                        current_op.inputs.append(current_input_tensor)
-                    current_input_tensor = Tensor()
-                    current_input_tensor.index = index
-                    current_input_tensor.shape = shape
-                    current_input_tensor.type_name = data_type
-                else:
-                    state = State.OUTPUT_HEADER
-                    if current_input_tensor != None:
-                        current_op.inputs.append(current_input_tensor)
-                    current_input_tensor = None
-                    match = output_header_pattern.match(line)
-                    if match == None:
-                        print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
-                        exit(1)
-                    redo = True
-
-            elif state == State.TENSOR_DATA:
-                match = tensor_data_pattern.match(line)
-                if match == None:
-                    print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
-                    exit(1)
-                data = match.group("data")
-                if data.startswith("Empty"):
-                    data = None
-                else:
-                    data = ast.literal_eval(data)
-                    data = np.asarray(data, dtype=getattr(np, current_input_tensor.type_name.lower()))
-                current_input_tensor.data = data
-                state = State.INPUT_INFO
-
-            elif state == State.OUTPUT_HEADER:
-                match = output_header_pattern.match(line)
-                if match == None:
-                    print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
-                    exit(1)
-                state = State.OUTPUT_INFO
-
-            elif state == State.OUTPUT_INFO:
-                match = output_info_pattern.match(line)
-                if match != None: # matched output info
-                    state = State.OUTPUT_INFO
-                    index = match.group("index")
-                    index = int(index)
-                    shape = match.group("shape")
-                    shape = ast.literal_eval(shape)
-                    data_type = match.group("data_type")
-                    current_output_tensor = Tensor()
-                    current_output_tensor.index = index
-                    current_output_tensor.shape = shape
-                    current_output_tensor.type_name = data_type
-                    current_op.outputs.append(current_output_tensor)
-                else:
-                    state = State.OP
-                    match = op_pattern.match(line)
-                    if match == None:
-                        print("Line: '\n" + line[:min(len(line), max_error_line_length)] + "\n' did not match pattern for state " + str(state))
-                        exit(1)
-                    redo = True
-
-            if not redo:
-                i += 1
-        if current_op != None:
-            ops.append(current_op)
-            current_op = None
-            current_input_tensor = None
-            current_output_tensor = None
-        pickle.dump(ops, open(filename + ".pkl", "wb"))
+        text_to_pickle(input_path, filename)
     elif mimetype == "application/octet-stream" and (file_extension in [".pkl", ".pickle"]):
         ops = pickle.load(open(input_path, "rb"))
     else:
