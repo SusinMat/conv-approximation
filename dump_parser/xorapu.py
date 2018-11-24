@@ -126,7 +126,7 @@ def batchify(original_list, batch_size):
         yield original_list[i * batch_size : min((i + 1) * batch_size, len(original_list))]
     return
 
-def test_model(model_path, image_directory, beeswax_directory, classes_to_test=1000, images_per_class=10000, batch_size=200, threads=1, seed=None):
+def test_model(model_path, image_directory, beeswax_directory, classes_to_test=10, images_per_class=10, batch_size=200, threads=1, seed=None):
 
     if None in [image_directory, beeswax_directory]:
         paths_filename = "xorapu_paths.pkl"
@@ -169,9 +169,6 @@ def test_model(model_path, image_directory, beeswax_directory, classes_to_test=1
 
 if __name__ == "__main__":
 
-    images_per_class = 1
-    classes_to_test = 100
-
     # Preparing environment
 
     parser = argparse.ArgumentParser(description="Execute the beeswax benchmark and report accuracy.")
@@ -212,7 +209,7 @@ if __name__ == "__main__":
 
     # Done preparing environment
 
-    (top1_accuracy, top5_accuracy) = test_model(model_path, image_directory, beeswax_directory, classes_to_test=classes_to_test, images_per_class=images_per_class)
+    (top1_accuracy, top5_accuracy) = test_model(model_path, image_directory, beeswax_directory)
 
     # Printing result
 

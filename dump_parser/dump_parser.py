@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     if mimetype == "text/plain":
         f = open(input_path, 'r')
-        dump = [line for line in [line.strip() for line in f.readlines()] if line != "" ]
+        dump = [line for line in [line.strip() for line in f.readlines()] if line != ""]
         f.close()
 
         # match portion of the 'tensor line' that is common to input and output tensors
