@@ -213,6 +213,10 @@ def op_to_tf(op, input_value):
         result = tf.nn.softmax(input_value)
         subgraph.append(result)
 
+    elif op.name == "Concatenation":
+        result = tf.concat(input_value, axis=op.options["axis"])
+        subgraph.append(result)
+
     else:
         print("Unsupported operation: " + op.name)
         exit(1)
@@ -315,6 +319,7 @@ if __name__ == "__main__":
                 break
 
     tensor = conv.inputs[1]
+    # tensor.data += 0.01
     # print(np.max(tensor.data))
 
     for op in ops:
@@ -352,6 +357,6 @@ if __name__ == "__main__":
             #     out_tensor = sess.run(tensor, {input_placeholder : image})
             #     print(out_tensor.flatten().tolist()[0])
         if run_xorapu:
-            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None)
+            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=10 ,images_per_class=10)
             print("Top 1 accuracy: %.02f%%" % (top1_accuracy))
             print("Top 5 accuracy: %.02f%%" % (top5_accuracy))
