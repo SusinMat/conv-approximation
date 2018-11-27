@@ -270,44 +270,35 @@ if __name__ == "__main__":
     tensors.sort(key=lambda item: item.index)
     tensors = remove_successive_duplicates(tensors)
 
-    tf_tensors = []
-    for tensor in tensors:
-        data_type = None
-        tf_tensor = None
-        if tensor.type_name == "FLOAT32":
-            data_type = tf.float32
-        elif tensor.type_name == "INT32":
-            data_type = tf.int32
-        elif tensor.type_name == "UINT8":
-            data_type = tf.uint8
-        else:
-            print("Unsupported data type " + tensor.type_name)
-            exit(1)
-
-        if type(tensor.data) == np.ndarray:
-            # tf_tensor = tf.convert_to_tensor(tensor.data, dtype=data_type)
-            tf_tensor = tf.constant(tensor.data, dtype=data_type)
-        elif tensor_has_no_data(tensor):
-            tf_tensor = tf.placeholder(dtype=data_type, shape=tensor.shape)
-        else:
-            print("Tensor's 'data' member is of unsupported type " + type(tensor.data))
-            exit(1)
-        tf_tensors.append(tf_tensor)
-
     with open("labels.txt", "r") as f:
         labels = [line.strip() for line in f.readlines()]
 
+
+    tensor_indexes = [tensor.index for tensor in tensors]
+    tensor_count = len(tensor_indexes)
+
     op = ops[0]
     input_placeholder = None
+    network_input_index = None
 
     for tensor in ops[0].inputs:
         if tensor_has_no_data(tensor):
-            input_placeholder = tf_tensors[tensor.index]
+            data_type = None
+            tf_tensor = None
+            if tensor.type_name == "FLOAT32":
+                data_type = tf.float32
+            elif tensor.type_name == "INT32":
+                data_type = tf.int32
+            elif tensor.type_name == "UINT8":
+                data_type = tf.uint8
+            else:
+                print("Unsupported data type " + tensor.type_name)
+                exit(1)
+            input_placeholder = tf.placeholder(dtype=data_type, shape=tensor.shape)
+            network_input_index = tensor.index
     if input_placeholder == None:
         print("Error: could not find input tensor.")
         exit(1)
-
-    graph = [input_placeholder]
 
     conv = None
     count = 0
@@ -322,12 +313,28 @@ if __name__ == "__main__":
     # tensor.data += 0.01
     # print(np.max(tensor.data))
 
+    dataless_tensor_indexes = [tensor.index for tensor in tensors if tensor.data is None]
+    index_to_tensor = {network_input_index : input_placeholder}
+    layer_list = []
+
     for op in ops:
-        subgraph = op_to_tf(op, graph[-1])
-        graph += subgraph
-        if not run_xorapu:
-            for tensor in subgraph:
-                print(tensor)
+        input_indexes = [tensor.index for tensor in op.inputs if tensor.data is None]
+        if len(input_indexes) > 1:
+            op_input = []
+            for input_index in input_indexes:
+                op_input.append(index_to_tensor[input_index])
+        else:
+            op_input = index_to_tensor[input_indexes[0]]
+        subgraph = op_to_tf(op, op_input)
+        last_node = subgraph[-1]
+        output_indexes = [tensor.index for tensor in op.outputs]
+        index_to_tensor[output_indexes[0]] = last_node
+        layer_list.append(subgraph)
+
+    if not run_xorapu:
+        for layer in layer_list:
+            for node in layer:
+                print(node)
             print("----------------")
 
     with tf.Session() as sess:
@@ -336,7 +343,7 @@ if __name__ == "__main__":
 
         # tensorflow 1.11
         # save flatbuffer
-        converter = tf.contrib.lite.TocoConverter.from_session(sess, [input_placeholder], [graph[-1]])
+        converter = tf.contrib.lite.TocoConverter.from_session(sess, [input_placeholder], [last_node])
         tflite_model = converter.convert()
         reconstructed_model = open("reconstructed_" + filename + ".tflite", "wb")
         reconstructed_model.write(tflite_model)
@@ -344,7 +351,7 @@ if __name__ == "__main__":
         if input_mode:
             input_image = read_tensor_from_image_file(image_path)
             image = input_image.reshape([1, 224, 224, 3])
-            out_tensor = sess.run(graph[-1], {input_placeholder : image})
+            out_tensor = sess.run(last_node, {input_placeholder : image})
             sorted_out_tensor = np.flipud(np.sort(out_tensor[0]))
             indexes = np.argsort(-out_tensor[0])
             print("Top 5:")
@@ -357,6 +364,6 @@ if __name__ == "__main__":
             #     out_tensor = sess.run(tensor, {input_placeholder : image})
             #     print(out_tensor.flatten().tolist()[0])
         if run_xorapu:
-            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=10 ,images_per_class=10)
+            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=100 ,images_per_class=10)
             print("Top 1 accuracy: %.02f%%" % (top1_accuracy))
             print("Top 5 accuracy: %.02f%%" % (top5_accuracy))
