@@ -217,6 +217,10 @@ def op_to_tf(op, input_value):
         result = tf.concat(input_value, axis=op.options["axis"])
         subgraph.append(result)
 
+    elif op.name == "Add":
+        result = tf.math.add(input_value[0], input_value[1])
+        subgraph.append(result)
+
     else:
         print("Unsupported operation: " + op.name)
         exit(1)
