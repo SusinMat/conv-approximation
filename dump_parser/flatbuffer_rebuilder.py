@@ -29,9 +29,10 @@ tf.contrib.lite.tempfile = tempfile
 tf.contrib.lite.subprocess = subprocess
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # suppress message about lack of AVX2 and FMA support in the TensorFlow binary
 
-use_layers_conv    = 0
-use_slim_depthwise = 0
-use_slim_pool      = 1
+use_layers_conv            = 0
+use_slim_depthwise         = 0
+use_slim_pool              = 1
+use_layers_fully_connected = 0
 pooling_types      = ["AVG", "MAX"]
 
 def read_tensor_from_image_file(file_name, input_height=224, input_width=224, input_mean=-127, input_std=127):
@@ -229,6 +230,29 @@ def op_to_tf(op, input_value):
             result = activation_function(result)
             subgraph.append(result)
 
+    elif op.name == "FullyConnected":
+        if use_layers_fully_connected:
+            weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
+            bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
+            result = tf.layers.dense(input_value,
+                    op.inputs[1].shape[0],
+                    activation=activation_function_to_tf(op.options["fused_activation_function"]),
+                    kernel_initializer=weight_as_tensor,
+                    use_bias=True,
+                    bias_initializer=bias_as_tensor,
+                   )
+            subgraph.append(result)
+        else:
+            activation_function = activation_function_to_tf(op.options["fused_activation_function"])
+            result = input_value * op.inputs[1].data
+            subgraph.append(result)
+            if op.inputs[2].data is not None:
+                result = result + op.inputs[2].data
+                subgraph.append(result)
+            if activation_function is not None:
+                result = activation_function(result)
+                subgraph.append(result)
+
     else:
         print("Unsupported operation: " + op.name)
         exit(1)
@@ -392,6 +416,6 @@ if __name__ == "__main__":
             #     out_tensor = sess.run(tensor, {input_placeholder : image})
             #     print(out_tensor.flatten().tolist()[0])
         if run_xorapu:
-            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=100 ,images_per_class=10)
+            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=20 ,images_per_class=10)
             print("Top 1 accuracy: %.02f%%" % (top1_accuracy))
             print("Top 5 accuracy: %.02f%%" % (top5_accuracy))
