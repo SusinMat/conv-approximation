@@ -210,7 +210,8 @@ if __name__ == "__main__":
     ops = []
 
     if mimetype == "text/plain":
-        text_to_pickle(input_path, filename)
+        model_filename = text_to_pickle(input_path, filename)
+        ops = pickle.load(open(model_filename, "rb"))
     elif mimetype == "application/octet-stream" and (file_extension in [".pkl", ".pickle"]):
         ops = pickle.load(open(input_path, "rb"))
     else:

@@ -216,10 +216,18 @@ def op_to_tf(op, input_value):
     elif op.name == "Concatenation":
         result = tf.concat(input_value, axis=op.options["axis"])
         subgraph.append(result)
+        activation_function = activation_function_to_tf(op.options["fused_activation_function"])
+        if activation_function is not None:
+            result = activation_function(result)
+            subgraph.append(result)
 
     elif op.name == "Add":
         result = tf.math.add(input_value[0], input_value[1])
         subgraph.append(result)
+        activation_function = activation_function_to_tf(op.options["fused_activation_function"])
+        if activation_function is not None:
+            result = activation_function(result)
+            subgraph.append(result)
 
     else:
         print("Unsupported operation: " + op.name)
