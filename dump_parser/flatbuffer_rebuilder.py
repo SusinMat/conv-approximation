@@ -285,33 +285,46 @@ if __name__ == "__main__":
     with open("labels.txt", "r") as f:
         labels = [line.strip() for line in f.readlines()]
 
-
+    # Count how many tensors indexes are in use
     tensor_indexes = [tensor.index for tensor in tensors]
     tensor_count = len(tensor_indexes)
 
-    op = ops[0]
-    input_placeholder = None
-    network_input_index = None
+    # Determine from input tensors which one is the network's input
+    empty_indexes_set = set([tensor.index for tensor in tensors if tensor.data is None])
+    output_tensors = set([tensor.index for sublist in [op.outputs for op in ops] for tensor in sublist])
+    input_tensors = empty_indexes_set - output_tensors
+    if len(input_tensors) != 1:
+        print("Error: Set of input tensors has", len(input_tensors), "elements.")
+        exit(1)
+    network_input_index = list(input_tensors)[0]
+    network_input_tensor = None
 
-    for tensor in ops[0].inputs:
-        if tensor_has_no_data(tensor):
-            data_type = None
-            tf_tensor = None
-            if tensor.type_name == "FLOAT32":
-                data_type = tf.float32
-            elif tensor.type_name == "INT32":
-                data_type = tf.int32
-            elif tensor.type_name == "UINT8":
-                data_type = tf.uint8
-            else:
-                print("Unsupported data type " + tensor.type_name)
-                exit(1)
-            input_placeholder = tf.placeholder(dtype=data_type, shape=tensor.shape)
-            network_input_index = tensor.index
-    if input_placeholder == None:
-        print("Error: could not find input tensor.")
+    # Determine which ops depend directly on the input tensor (i.e. they are on the first layer)
+    input_ops = []
+    for op in ops:
+        for tensor in op.inputs:
+            if tensor.index == network_input_index:
+                input_ops.append(op)
+                if network_input_tensor is None:
+                    network_input_tensor = tensor
+
+    if len(input_ops) < 0:
+        print("Error: input op not found.")
         exit(1)
 
+    # Allocate placeholder for the network's input
+    if network_input_tensor.type_name == "FLOAT32":
+        data_type = tf.float32
+    elif network_input_tensor.type_name == "INT32":
+        data_type = tf.int32
+    elif network_input_tensor.type_name == "UINT8":
+        data_type = tf.uint8
+    else:
+        print("Unsupported data type " + network_input_tensor.type_name)
+        exit(1)
+    input_placeholder = tf.placeholder(dtype=data_type, shape=network_input_tensor.shape)
+
+    # Find layer to apply approximation to
     conv = None
     count = 0
     for op in ops:
@@ -320,26 +333,29 @@ if __name__ == "__main__":
             if count == 1:
                 conv = op
                 break
-
     tensor = conv.inputs[1]
     # tensor.data += 0.01
     # print(np.max(tensor.data))
 
-    dataless_tensor_indexes = [tensor.index for tensor in tensors if tensor.data is None]
+    # Map tensor index to where its value is/will be held
     index_to_tensor = {network_input_index : input_placeholder}
     layer_list = []
 
     for op in ops:
         input_indexes = [tensor.index for tensor in op.inputs if tensor.data is None]
-        if len(input_indexes) > 1:
+        if len(input_indexes) > 1: # More than one input tensor: input values will be passed as a list
             op_input = []
             for input_index in input_indexes:
                 op_input.append(index_to_tensor[input_index])
         else:
+            # Single input tensor: input value will be passed as tensor
             op_input = index_to_tensor[input_indexes[0]]
+        # Convert layer to chain of ops
         subgraph = op_to_tf(op, op_input)
+        # Remember last op in the chain
         last_node = subgraph[-1]
         output_indexes = [tensor.index for tensor in op.outputs]
+        # Update map
         index_to_tensor[output_indexes[0]] = last_node
         layer_list.append(subgraph)
 
