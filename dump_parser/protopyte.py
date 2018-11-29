@@ -31,7 +31,7 @@ def approximate(op):
 if __name__ == "__main__":
     op = pickle.load(open("layer.pkl", "rb"))
     W = op.inputs[1].data
-    [Wapprox, Wmono, colors, perm] = approximate(op)
+    [Wapprox, Wmono, colors, perm, num_weights] = approximate(op)
     print(Wapprox.shape)
 
     L2_err = la.norm(W - Wapprox) / la.norm(W)

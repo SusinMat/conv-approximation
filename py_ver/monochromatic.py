@@ -82,4 +82,4 @@ def monochromatic_approx(W, num_colors=6, even=False):
     num_weights = colors.size + Wmono.size
     print("num_weights == %s" % (str(num_weights)))
 
-    return [Wapprox, Wmono, perm, num_weights]
+    return [Wapprox, Wmono, colors, perm, num_weights]

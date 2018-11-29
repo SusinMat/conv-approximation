@@ -362,7 +362,7 @@ if __name__ == "__main__":
                 conv = op
                 break
     # pickle.dump(conv, open("layer.pkl", "wb"))
-    [Wapprox, Wmono, colors, perm] = approximate(op)
+    [Wapprox, Wmono, colors, perm, num_weights] = approximate(op)
     op.inputs[1].data = Wapprox
     # tensor.data += 0.01
     # print(np.max(tensor.data))
