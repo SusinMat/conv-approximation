@@ -17,6 +17,7 @@ import magic # package is called 'python-libmagic' in pip, and it also requires 
 import numpy as np
 import os
 import pickle
+from protopyte import approximate
 import re
 import sys
 import tensorflow as tf
@@ -29,11 +30,12 @@ tf.contrib.lite.tempfile = tempfile
 tf.contrib.lite.subprocess = subprocess
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # suppress message about lack of AVX2 and FMA support in the TensorFlow binary
 
+pooling_types = ["AVG", "MAX"]
+
 use_layers_conv            = 0
 use_slim_depthwise         = 0
 use_slim_pool              = 1
 use_layers_fully_connected = 0
-pooling_types      = ["AVG", "MAX"]
 
 def read_tensor_from_image_file(file_name, input_height=224, input_width=224, input_mean=-127, input_std=127):
     input_name = "file_reader"
@@ -244,7 +246,9 @@ def op_to_tf(op, input_value):
             subgraph.append(result)
         else:
             activation_function = activation_function_to_tf(op.options["fused_activation_function"])
-            result = input_value * op.inputs[1].data
+            result = tf.squeeze(input_value, axis=[0, 1, 2])
+            subgraph.append(result)
+            result = result * op.inputs[1].data
             subgraph.append(result)
             if op.inputs[2].data is not None:
                 result = result + op.inputs[2].data
@@ -357,7 +361,9 @@ if __name__ == "__main__":
             if count == 1:
                 conv = op
                 break
-    tensor = conv.inputs[1]
+    # pickle.dump(conv, open("layer.pkl", "wb"))
+    [Wapprox, Wmono, colors, perm] = approximate(op)
+    op.inputs[1].data = Wapprox
     # tensor.data += 0.01
     # print(np.max(tensor.data))
 

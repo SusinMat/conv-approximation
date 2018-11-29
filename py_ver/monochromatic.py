@@ -51,7 +51,7 @@ def monochromatic_approx(W, num_colors=6, even=False):
         (assignment, colors) = litekmeans(C.transpose(), num_colors)
         colors = colors.transpose()
     else:
-        max_iter = 1000
+        max_iter = 1000000
         (colors, assignment) = kmeans2(C, num_colors, minit="points", iter=max_iter)
 
     Wapprox = np.zeros(W.shape)

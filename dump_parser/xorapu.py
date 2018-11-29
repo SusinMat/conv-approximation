@@ -126,7 +126,7 @@ def batchify(original_list, batch_size):
         yield original_list[i * batch_size : min((i + 1) * batch_size, len(original_list))]
     return
 
-def test_model(model_path, image_directory, beeswax_directory, classes_to_test=10, images_per_class=10, batch_size=800, threads=1, seed=None):
+def test_model(model_path, image_directory, beeswax_directory, classes_to_test=100, images_per_class=20, batch_size=800, threads=1, seed=None):
 
     if None in [image_directory, beeswax_directory]:
         paths_filename = "xorapu_paths.pkl"
