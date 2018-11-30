@@ -61,6 +61,8 @@ def monochromatic_approx(W, num_colors=6, even=False):
     print("S--" + str(S.shape))
     print("assignment--%s colors--%s" % (str(assignment.shape), str(colors.shape)))
 
+    perm = assignment.flatten()
+
     Wapprox = []
 
     for f in range(0, np.shape(W)[0]):
@@ -76,8 +78,8 @@ def monochromatic_approx(W, num_colors=6, even=False):
 
 
     Wmono = S.reshape(W.shape[0], W.shape[2], W.shape[3]) # [filters, height, width]
-
-    perm = np.argsort(assignment)
+    print("Wmono--%s" % (str(Wmono.shape)))
+    print("perm == %s" % (str(perm)))
     colors = colors.transpose()
     num_weights = colors.size + Wmono.size
     print("num_weights == %s" % (str(num_weights)))
