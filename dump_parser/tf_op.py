@@ -15,11 +15,11 @@ class Tensor:
     shape = None
     type_name = ""
     data = None
-    def __init__(self):
-        self.index = -1
-        self.shape = None
-        self.type_name = ""
-        self.data = None
+    def __init__(self, index=-1, shape=None, type_name="", data=None):
+        self.index =index
+        self.shape = shape
+        self.type_name = type_name
+        self.data = data
 
 class Op:
     name = ""

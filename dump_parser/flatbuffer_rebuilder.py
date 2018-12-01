@@ -108,20 +108,31 @@ def op_to_tf(op, input_value):
     subgraph = []
     if op.name == "Conv2D":
         weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
-        bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
+        if len(op.inputs) >= 2:
+            bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
         weight_data = op.inputs[1].data
         weight_as_array = weight_data.transpose(1, 2, 3, 0)
         if use_layers_conv:
-            result = tf.layers.conv2d(input_value,
-                    op.inputs[1].shape[0],
-                    op.inputs[1].shape[1:3],
-                    kernel_initializer=weight_as_tensor,
-                    bias_initializer=bias_as_tensor,
-                    use_bias=True,
-                    strides=[op.options["stride_h"], op.options["stride_w"]],
-                    padding=op.options["padding"],
-                    activation=activation_function_to_tf(op.options["fused_activation_function"])
-                   )
+            if len(op.inputs) >= 2:
+                result = tf.layers.conv2d(input_value,
+                        op.inputs[1].shape[0],
+                        op.inputs[1].shape[1:3],
+                        kernel_initializer=weight_as_tensor,
+                        bias_initializer=bias_as_tensor,
+                        strides=[op.options["stride_h"], op.options["stride_w"]],
+                        padding=op.options["padding"],
+                        activation=activation_function_to_tf(op.options["fused_activation_function"])
+                       )
+            else:
+                result = tf.layers.conv2d(input_value,
+                        op.inputs[1].shape[0],
+                        op.inputs[1].shape[1:3],
+                        kernel_initializer=weight_as_tensor,
+                        use_bias=False,
+                        strides=[op.options["stride_h"], op.options["stride_w"]],
+                        padding=op.options["padding"],
+                        activation=activation_function_to_tf(op.options["fused_activation_function"])
+                       )
             subgraph.append(result)
         else:
             result = tf.nn.conv2d(input_value,
@@ -130,8 +141,9 @@ def op_to_tf(op, input_value):
                     padding=op.options["padding"]
                    )
             subgraph.append(result)
-            result = tf.nn.bias_add(result, op.inputs[2].data)
-            subgraph.append(result)
+            if len(op.inputs) >= 2:
+                result = tf.nn.bias_add(result, op.inputs[2].data)
+                subgraph.append(result)
             activation_function = activation_function_to_tf(op.options["fused_activation_function"])
             if activation_function is not None:
                 result = activation_function(result)
@@ -139,20 +151,33 @@ def op_to_tf(op, input_value):
 
     elif op.name == "DepthwiseConv2D":
         weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
-        bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
+        if len(op.inputs) >= 2:
+            bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
         weight_data = op.inputs[1].data
         weight_as_array = weight_data.transpose(1, 2, 3, 0)
         if use_slim_depthwise:
-            result = tf.contrib.slim.separable_convolution2d(input_value,
-                    None, # Makes the separable_convolution2d depthwise (as used @mobilenet)
-                    op.inputs[1].shape[1:3],
-                    weights_initializer=weight_as_tensor,
-                    biases_initializer=bias_as_tensor,
-                    depth_multiplier=op.options["depth_multiplier"],
-                    stride=[op.options["stride_h"], op.options["stride_w"]],
-                    padding=op.options["padding"],
-                    activation_fn=activation_function_to_tf(op.options["fused_activation_function"])
-                   )
+            if len(op.inputs) >= 2:
+                result = tf.contrib.slim.separable_convolution2d(input_value,
+                        None, # Makes the separable_convolution2d depthwise (as used @mobilenet)
+                        op.inputs[1].shape[1:3],
+                        weights_initializer=weight_as_tensor,
+                        biases_initializer=bias_as_tensor,
+                        depth_multiplier=op.options["depth_multiplier"],
+                        stride=[op.options["stride_h"], op.options["stride_w"]],
+                        padding=op.options["padding"],
+                        activation_fn=activation_function_to_tf(op.options["fused_activation_function"])
+                       )
+            else:
+                result = tf.contrib.slim.separable_convolution2d(input_value,
+                        None, # Makes the separable_convolution2d depthwise (as used @mobilenet)
+                        op.inputs[1].shape[1:3],
+                        weights_initializer=weight_as_tensor,
+                        use_bias=False,
+                        depth_multiplier=op.options["depth_multiplier"],
+                        stride=[op.options["stride_h"], op.options["stride_w"]],
+                        padding=op.options["padding"],
+                        activation_fn=activation_function_to_tf(op.options["fused_activation_function"])
+                       )
             subgraph.append(result)
         else:
             result = tf.nn.depthwise_conv2d(input_value,
@@ -161,8 +186,9 @@ def op_to_tf(op, input_value):
                     padding=op.options["padding"]
                    )
             subgraph.append(result)
-            result = tf.nn.bias_add(result, op.inputs[2].data)
-            subgraph.append(result)
+            if len(op.inputs) >= 2:
+                result = tf.nn.bias_add(result, op.inputs[2].data)
+                subgraph.append(result)
             activation_function = activation_function_to_tf(op.options["fused_activation_function"])
             if activation_function is not None:
                 result = activation_function(result)
@@ -304,18 +330,58 @@ if __name__ == "__main__":
     for i in range(len(ops)):
         ops[i].options = fix_dictionary_enum(ops[i].options)
 
+    with open("labels.txt", "r") as f:
+        labels = [line.strip() for line in f.readlines()]
+
     op_names = [op.name for op in ops]
     tensors = [item for sublist in [op.inputs + op.outputs for op in ops] for item in sublist]
 
     tensors.sort(key=lambda item: item.index)
     tensors = remove_successive_duplicates(tensors)
 
-    with open("labels.txt", "r") as f:
-        labels = [line.strip() for line in f.readlines()]
-
     # Count how many tensors indexes are in use
     tensor_indexes = [tensor.index for tensor in tensors]
-    tensor_count = len(tensor_indexes)
+
+    # Find layer to apply approximation to
+    conv = None
+    count = 0
+    for op in ops:
+        if op.name == "Conv2D":
+            count += 1
+            if count == 1:
+                conv = op
+                break
+    # pickle.dump(conv, open("layer.pkl", "wb"))
+    [Wapprox, Wmono, colors, perm, num_weights] = approximate(op)
+    monochrome_tensors = [len(tensor_indexes) + i for i in range(colors.shape[1])]
+    tensor_indexes += monochrome_tensors
+    rgb_to_mono_tensors = [len(tensor_indexes) + i for i in range(colors.shape[1])]
+    tensor_indexes += rgb_to_mono_tensors
+    approx_weights = []
+    for attribution in perm:
+        # TODO: group Wmonos that use the same grayscale as input
+        mono_weights = Wmono[attribution]
+        mono_weights = mono_weights.reshape([1, mono_weights.shape[0], mono_weights.shape[1] , 1])
+        approx_weights.append(mono_weights)
+    new_ops = []
+    for i in range(colors.shape[1]):
+        new_conv = Op()
+        # TODO: use stride = 2 in this step
+        new_conv.options = {"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"}
+        new_conv.options = fix_dictionary_enum(new_conv.options)
+        new_conv.inputs.append(op.inputs[0])
+        new_weights_tensor = Tensor(index=rgb_to_mono_tensors[i], shape=[1, 1, 1, colors.shape[0]], type_name=op.inputs[0].type_name)
+        new_weights_tensor.data = colors[:,i].reshape(1, 1, 1, colors.shape[0])
+        new_conv.inputs.append(new_weights_tensor)
+        new_mono_tensor = Tensor(index=monochrome_tensors[i], shape=[1, op.inputs[0].shape[1], op.inputs[0].shape[2], 1], type_name=op.inputs[0].type_name)
+        new_conv.outputs = [new_mono_tensor]
+    monoconv_tensors = [len(tensor_indexes) + i for i in range(len(perm))]
+    tensor_indexes += monoconv_tensors
+    for i in range(len(perm)):
+        pass
+    op.inputs[1].data = Wapprox
+    ops = [ops[0]] + new_ops + ops[1:]
+
 
     # Determine from input tensors which one is the network's input
     empty_indexes_set = set([tensor.index for tensor in tensors if tensor.data is None])
@@ -352,20 +418,6 @@ if __name__ == "__main__":
         exit(1)
     input_placeholder = tf.placeholder(dtype=data_type, shape=network_input_tensor.shape)
 
-    # Find layer to apply approximation to
-    conv = None
-    count = 0
-    for op in ops:
-        if op.name == "Conv2D":
-            count += 1
-            if count == 1:
-                conv = op
-                break
-    # pickle.dump(conv, open("layer.pkl", "wb"))
-    [Wapprox, Wmono, colors, perm, num_weights] = approximate(op)
-    op.inputs[1].data = Wapprox
-    # tensor.data += 0.01
-    # print(np.max(tensor.data))
 
     # Map tensor index to where its value is/will be held
     index_to_tensor = {network_input_index : input_placeholder}
