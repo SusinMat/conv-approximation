@@ -336,7 +336,6 @@ if __name__ == "__main__":
     with open("labels.txt", "r") as f:
         labels = [line.strip() for line in f.readlines()]
 
-    op_names = [op.name for op in ops]
     tensors = [item for sublist in [op.inputs + op.outputs for op in ops] for item in sublist]
 
     tensors.sort(key=lambda item: item.index)
@@ -361,9 +360,10 @@ if __name__ == "__main__":
     rgb_to_mono_tensors = [len(tensor_indexes) + i for i in range(colors.shape[1])]
     tensor_indexes += rgb_to_mono_tensors
     approx_weights = []
-    for attribution in perm:
+    for i in range(len(perm)):
         # TODO: group Wmonos that use the same grayscale as input
-        mono_weights = Wmono[attribution]
+        # attribution = perm[i]
+        mono_weights = Wmono[i]
         mono_weights = mono_weights.reshape([1, mono_weights.shape[0], mono_weights.shape[1] , 1])
         approx_weights.append(mono_weights)
     new_ops = []
@@ -389,11 +389,11 @@ if __name__ == "__main__":
     tensor_indexes += mono_bias_indexes
     # use the monochrome tensors from the previous step to approximate the output channels of this layer
     for i in range(len(perm)):
-        new_conv = Op(name="Conv2D")
-        new_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":2, "stride_w":2, "fused_activation_function":"NONE"})
+        new_conv = Op(name="DepthwiseConv2D")
+        new_conv.options = fix_dictionary_enum({"padding":"SAME", "depth_multiplier":1, "stride_h":2, "stride_w":2, "fused_activation_function":"RELU6"})
         new_conv.inputs.append(new_ops[perm[i]].outputs[0]) # the input is the output of the corresponding depthwise convolution
         new_weights_tensor = Tensor(index=mono_weights_tensors[i], shape=mono_weights.shape, type_name=op.inputs[0].type_name)
-        new_weights_tensor.data = approx_weights[perm[i]]
+        new_weights_tensor.data = approx_weights[i]
         new_conv.inputs.append(new_weights_tensor)
         new_bias_tensor = Tensor(index=mono_bias_indexes[i], shape=[1], type_name=op.inputs[0].type_name)
         new_bias_tensor.data = np.asarray([op.inputs[2].data[i]])
@@ -404,13 +404,13 @@ if __name__ == "__main__":
         new_ops.append(new_conv)
     # concatenate the output channels of this layer
     new_concat = Op(name="Concatenation")
-    new_concat.options =  fix_dictionary_enum({"axis":3, "fused_activation_function":"RELU6"})
+    new_concat.options =  fix_dictionary_enum({"axis":3, "fused_activation_function":"NONE"})
     for i in range(len(monoconv_tensors)):
         new_concat.inputs.append(monoconv_tensors[i])
     new_concat.outputs = [op.outputs[0]]
     new_ops.append(new_concat)
 
-    op.inputs[1].data = Wapprox
+    # op.inputs[1].data = Wapprox
     # ops = [ops[0]] + new_ops + ops[1:]
     ops = new_ops + ops[1:]
 
