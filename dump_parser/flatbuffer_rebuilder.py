@@ -385,21 +385,26 @@ if __name__ == "__main__":
     monoconv_indexes = [len(tensor_indexes) + i for i in range(len(perm))]
     monoconv_tensors = []
     tensor_indexes += monoconv_indexes
+    mono_bias_indexes = [len(tensor_indexes) + i for i in range(len(perm))]
+    tensor_indexes += mono_bias_indexes
     # use the monochrome tensors from the previous step to approximate the output channels of this layer
     for i in range(len(perm)):
         new_conv = Op(name="Conv2D")
-        new_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":2, "stride_w":2, "fused_activation_function":"RELU6"})
+        new_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":2, "stride_w":2, "fused_activation_function":"NONE"})
         new_conv.inputs.append(new_ops[perm[i]].outputs[0]) # the input is the output of the corresponding depthwise convolution
         new_weights_tensor = Tensor(index=mono_weights_tensors[i], shape=mono_weights.shape, type_name=op.inputs[0].type_name)
         new_weights_tensor.data = approx_weights[perm[i]]
         new_conv.inputs.append(new_weights_tensor)
+        new_bias_tensor = Tensor(index=mono_bias_indexes[i], shape=[1], type_name=op.inputs[0].type_name)
+        new_bias_tensor.data = np.asarray([op.inputs[2].data[i]])
+        new_conv.inputs.append(new_bias_tensor)
         new_output_tensor = Tensor(index=monoconv_indexes[i], shape=[1, op.outputs[0].shape[1], op.outputs[0].shape[2], 1], type_name=op.inputs[0].type_name)
         new_conv.outputs = [new_output_tensor]
         monoconv_tensors.append(new_output_tensor)
         new_ops.append(new_conv)
     # concatenate the output channels of this layer
     new_concat = Op(name="Concatenation")
-    new_concat.options =  fix_dictionary_enum({"axis":3, "fused_activation_function":"NONE"})
+    new_concat.options =  fix_dictionary_enum({"axis":3, "fused_activation_function":"RELU6"})
     for i in range(len(monoconv_tensors)):
         new_concat.inputs.append(monoconv_tensors[i])
     new_concat.outputs = [op.outputs[0]]
@@ -407,7 +412,7 @@ if __name__ == "__main__":
 
     op.inputs[1].data = Wapprox
     # ops = [ops[0]] + new_ops + ops[1:]
-    ops = [ops[0]] + new_ops + ops[1:]
+    ops = new_ops + ops[1:]
 
 
     # Determine from input tensors which one is the network's input
