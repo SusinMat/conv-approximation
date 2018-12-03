@@ -108,12 +108,12 @@ def op_to_tf(op, input_value):
     subgraph = []
     if op.name == "Conv2D":
         weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
-        if len(op.inputs) >= 2:
+        if len(op.inputs) >= 3:
             bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
         weight_data = op.inputs[1].data
         weight_as_array = weight_data.transpose(1, 2, 3, 0)
         if use_layers_conv:
-            if len(op.inputs) >= 2:
+            if len(op.inputs) >= 3:
                 result = tf.layers.conv2d(input_value,
                         op.inputs[1].shape[0],
                         op.inputs[1].shape[1:3],
@@ -141,22 +141,23 @@ def op_to_tf(op, input_value):
                     padding=op.options["padding"]
                    )
             subgraph.append(result)
-            if len(op.inputs) >= 2:
+            if len(op.inputs) >= 3:
                 result = tf.nn.bias_add(result, op.inputs[2].data)
                 subgraph.append(result)
             activation_function = activation_function_to_tf(op.options["fused_activation_function"])
             if activation_function is not None:
                 result = activation_function(result)
                 subgraph.append(result)
+        # print("Conv2D output:", result.shape)
 
     elif op.name == "DepthwiseConv2D":
         weight_as_tensor = tf.constant_initializer(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
-        if len(op.inputs) >= 2:
+        if len(op.inputs) >= 3:
             bias_as_tensor = tf.constant_initializer(op.inputs[2].data, dtype=type_name_to_tf(op.inputs[2].type_name))
         weight_data = op.inputs[1].data
         weight_as_array = weight_data.transpose(1, 2, 3, 0)
         if use_slim_depthwise:
-            if len(op.inputs) >= 2:
+            if len(op.inputs) >= 3:
                 result = tf.contrib.slim.separable_convolution2d(input_value,
                         None, # Makes the separable_convolution2d depthwise (as used @mobilenet)
                         op.inputs[1].shape[1:3],
@@ -186,13 +187,14 @@ def op_to_tf(op, input_value):
                     padding=op.options["padding"]
                    )
             subgraph.append(result)
-            if len(op.inputs) >= 2:
+            if len(op.inputs) >= 3:
                 result = tf.nn.bias_add(result, op.inputs[2].data)
                 subgraph.append(result)
             activation_function = activation_function_to_tf(op.options["fused_activation_function"])
             if activation_function is not None:
                 result = activation_function(result)
                 subgraph.append(result)
+        # print("DepthwiseConv2D output:", result.shape)
 
     elif op.name == "Pool2D":
         if use_slim_pool:
@@ -249,6 +251,7 @@ def op_to_tf(op, input_value):
         if activation_function is not None:
             result = activation_function(result)
             subgraph.append(result)
+        # print("Concatenation output:", result.shape)
 
     elif op.name == "Add":
         result = tf.math.add(input_value[0], input_value[1])
@@ -364,22 +367,46 @@ if __name__ == "__main__":
         mono_weights = mono_weights.reshape([1, mono_weights.shape[0], mono_weights.shape[1] , 1])
         approx_weights.append(mono_weights)
     new_ops = []
+    # perform the depthwise conv that outputs the monochrome tensors
     for i in range(colors.shape[1]):
-        new_conv = Op()
+        new_conv = Op(name="Conv2D")
         # TODO: use stride = 2 in this step
-        new_conv.options = {"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"}
-        new_conv.options = fix_dictionary_enum(new_conv.options)
+        new_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"})
         new_conv.inputs.append(op.inputs[0])
-        new_weights_tensor = Tensor(index=rgb_to_mono_tensors[i], shape=[1, 1, 1, colors.shape[0]], type_name=op.inputs[0].type_name)
+        new_weights_tensor = Tensor(index=rgb_to_mono_tensors[i], type_name=op.inputs[0].type_name)
         new_weights_tensor.data = colors[:,i].reshape(1, 1, 1, colors.shape[0])
+        new_weights_tensor.shape = new_weights_tensor.data.shape
         new_conv.inputs.append(new_weights_tensor)
         new_mono_tensor = Tensor(index=monochrome_tensors[i], shape=[1, op.inputs[0].shape[1], op.inputs[0].shape[2], 1], type_name=op.inputs[0].type_name)
         new_conv.outputs = [new_mono_tensor]
-    monoconv_tensors = [len(tensor_indexes) + i for i in range(len(perm))]
-    tensor_indexes += monoconv_tensors
+        new_ops.append(new_conv)
+    mono_weights_tensors = [len(tensor_indexes) + i for i in range(len(perm))]
+    tensor_indexes += mono_weights_tensors
+    monoconv_indexes = [len(tensor_indexes) + i for i in range(len(perm))]
+    monoconv_tensors = []
+    tensor_indexes += monoconv_indexes
+    # use the monochrome tensors from the previous step to approximate the output channels of this layer
     for i in range(len(perm)):
-        pass
+        new_conv = Op(name="Conv2D")
+        new_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":2, "stride_w":2, "fused_activation_function":"RELU6"})
+        new_conv.inputs.append(new_ops[perm[i]].outputs[0]) # the input is the output of the corresponding depthwise convolution
+        new_weights_tensor = Tensor(index=mono_weights_tensors[i], shape=mono_weights.shape, type_name=op.inputs[0].type_name)
+        new_weights_tensor.data = approx_weights[perm[i]]
+        new_conv.inputs.append(new_weights_tensor)
+        new_output_tensor = Tensor(index=monoconv_indexes[i], shape=[1, op.outputs[0].shape[1], op.outputs[0].shape[2], 1], type_name=op.inputs[0].type_name)
+        new_conv.outputs = [new_output_tensor]
+        monoconv_tensors.append(new_output_tensor)
+        new_ops.append(new_conv)
+    # concatenate the output channels of this layer
+    new_concat = Op(name="Concatenation")
+    new_concat.options =  fix_dictionary_enum({"axis":3, "fused_activation_function":"NONE"})
+    for i in range(len(monoconv_tensors)):
+        new_concat.inputs.append(monoconv_tensors[i])
+    new_concat.outputs = [op.outputs[0]]
+    new_ops.append(new_concat)
+
     op.inputs[1].data = Wapprox
+    # ops = [ops[0]] + new_ops + ops[1:]
     ops = [ops[0]] + new_ops + ops[1:]
 
 

@@ -27,8 +27,8 @@ class Op:
     options = {}
     inputs = []
     outputs = []
-    def __init__(self):
-        self.name = ""
+    def __init__(self, name=""):
+        self.name = name
         self.index = -1
         self.options = {}
         self.inputs = []
