@@ -367,10 +367,9 @@ if __name__ == "__main__":
         mono_weights = mono_weights.reshape([1, mono_weights.shape[0], mono_weights.shape[1] , 1])
         approx_weights.append(mono_weights)
     new_ops = []
-    # perform the depthwise conv that outputs the monochrome tensors
+    # perform the conv that outputs the monochrome tensors
     for i in range(colors.shape[1]):
         new_conv = Op(name="Conv2D")
-        # TODO: use stride = 2 in this step
         new_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"})
         new_conv.inputs.append(op.inputs[0])
         new_weights_tensor = Tensor(index=rgb_to_mono_tensors[i], type_name=op.inputs[0].type_name)
