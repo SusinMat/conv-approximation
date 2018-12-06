@@ -253,6 +253,18 @@ def op_to_tf(op, input_value):
             subgraph.append(result)
         # print("Concatenation output:", result.shape)
 
+    elif op.name == "Split":
+        num_or_size_splits_tensor = tf.constant_initializer(int(input_value.shape[op.options["axis"]]), dtype=tf.int32)
+        result = tf.split(input_value, int(input_value.shape[op.options["axis"]]), axis=op.options["axis"])
+        subgraph.append(result)
+        activation_function = activation_function_to_tf(op.options["fused_activation_function"])
+        if activation_function is not None:
+            result = activation_function(result)
+            subgraph.append(result)
+        print("Split output(s):")
+        for tensor in result:
+            print(tensor.shape)
+
     elif op.name == "Add":
         result = tf.math.add(input_value[0], input_value[1])
         subgraph.append(result)
@@ -353,12 +365,44 @@ if __name__ == "__main__":
             if count == 1:
                 conv = op
                 break
+
+    ### Approximation starts here ###
     # pickle.dump(conv, open("layer.pkl", "wb"))
     [Wapprox, Wmono, colors, perm, num_weights] = approximate(op)
-    monochrome_tensors = [len(tensor_indexes) + i for i in range(colors.shape[1])]
+    new_ops = []
+    num_colors = colors.shape[1]
+    # tensor that holds the monochrome tensors, before they are split
+    transformation_weights_index = [len(tensor_indexes) + i for i in range(1)]
+    tensor_indexes += transformation_weights_index
+    # tensor that holds the monochrome tensors, before they are split
+    monotensor_index = [len(tensor_indexes) + i for i in range(1)]
+    tensor_indexes += monotensor_index
+    # tensors that each hold a monochrome tensors
+    monochrome_tensors = [len(tensor_indexes) + i for i in range(num_colors)]
     tensor_indexes += monochrome_tensors
-    rgb_to_mono_tensors = [len(tensor_indexes) + i for i in range(colors.shape[1])]
+    # tensors that each hold the weights to convert one RGB image into a monochrome image
+    rgb_to_mono_tensors = [len(tensor_indexes) + i for i in range(num_colors)]
     tensor_indexes += rgb_to_mono_tensors
+
+    new_conv = Op(name="Conv2D")
+    new_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"})
+    new_conv.inputs.append(op.inputs[0])
+    new_weights_tensor = Tensor(index=transformation_weights_index, type_name=op.inputs[0].type_name)
+    new_weights_tensor.data = colors.transpose().reshape(num_colors, 1, 1, colors.shape[0])
+    new_weights_tensor.shape = new_weights_tensor.data.shape
+    new_conv.inputs.append(new_weights_tensor)
+    new_mono_tensor = Tensor(index=monotensor_index[0], shape=[1, op.inputs[0].shape[1], op.inputs[0].shape[2], num_colors], type_name=op.inputs[0].type_name)
+    new_conv.outputs = [new_mono_tensor]
+    new_ops.append(new_conv)
+
+    new_split = Op(name="Split")
+    new_split.options = fix_dictionary_enum({"axis":3, "fused_activation_function":"NONE", "num_splits":op.outputs[0].shape[3]})
+    new_split.inputs.append(new_mono_tensor)
+    for i in range(num_colors):
+        new_mono_tensor = Tensor(index=monochrome_tensors[i], shape=[1, op.inputs[0].shape[1], op.inputs[0].shape[2], 1], type_name=op.inputs[0].type_name)
+        new_split.outputs.append(new_mono_tensor)
+    new_ops.append(new_split)
+
     approx_weights = []
     for i in range(len(perm)):
         # TODO: group Wmonos that use the same grayscale as input
@@ -366,7 +410,6 @@ if __name__ == "__main__":
         mono_weights = Wmono[i]
         mono_weights = mono_weights.reshape([1, mono_weights.shape[0], mono_weights.shape[1] , 1])
         approx_weights.append(mono_weights)
-    new_ops = []
     # perform the conv that outputs the monochrome tensors
     for i in range(colors.shape[1]):
         new_conv = Op(name="Conv2D")
@@ -378,19 +421,24 @@ if __name__ == "__main__":
         new_conv.inputs.append(new_weights_tensor)
         new_mono_tensor = Tensor(index=monochrome_tensors[i], shape=[1, op.inputs[0].shape[1], op.inputs[0].shape[2], 1], type_name=op.inputs[0].type_name)
         new_conv.outputs = [new_mono_tensor]
-        new_ops.append(new_conv)
+    #     new_ops.append(new_conv)
+
+    # CHANNEL weights tensors to calculate an output channel from a monochrome tensor
     mono_weights_tensors = [len(tensor_indexes) + i for i in range(len(perm))]
     tensor_indexes += mono_weights_tensors
+    # CHANNEL tensors that hold the bias to apply to the output channel for each monochrome tensor
+    mono_bias_indexes = [len(tensor_indexes) + i for i in range(len(perm))]
+    tensor_indexes += mono_bias_indexes
+    # CHANNEL weights tensors that hold an output channel calculated from a monochrome tensor
     monoconv_indexes = [len(tensor_indexes) + i for i in range(len(perm))]
     monoconv_tensors = []
     tensor_indexes += monoconv_indexes
-    mono_bias_indexes = [len(tensor_indexes) + i for i in range(len(perm))]
-    tensor_indexes += mono_bias_indexes
+
     # use the monochrome tensors from the previous step to approximate the output channels of this layer
     for i in range(len(perm)):
         new_conv = Op(name="DepthwiseConv2D")
         new_conv.options = fix_dictionary_enum({"padding":"SAME", "depth_multiplier":1, "stride_h":2, "stride_w":2, "fused_activation_function":"RELU6"})
-        new_conv.inputs.append(new_ops[perm[i]].outputs[0]) # the input is the output of the corresponding depthwise convolution
+        new_conv.inputs.append(new_split.outputs[perm[i]]) # the input is the output of the corresponding depthwise convolution
         new_weights_tensor = Tensor(index=mono_weights_tensors[i], shape=mono_weights.shape, type_name=op.inputs[0].type_name)
         new_weights_tensor.data = approx_weights[i]
         new_conv.inputs.append(new_weights_tensor)
@@ -469,7 +517,11 @@ if __name__ == "__main__":
         last_node = subgraph[-1]
         output_indexes = [tensor.index for tensor in op.outputs]
         # Update map
-        index_to_tensor[output_indexes[0]] = last_node
+        if type(last_node) is not list:
+            index_to_tensor[output_indexes[0]] = last_node
+        else:
+            for i in range(len(op.outputs)):
+                index_to_tensor[output_indexes[i]] = last_node[i]
         layer_list.append(subgraph)
 
     if not run_xorapu:
@@ -505,6 +557,6 @@ if __name__ == "__main__":
             #     out_tensor = sess.run(tensor, {input_placeholder : image})
             #     print(out_tensor.flatten().tolist()[0])
         if run_xorapu:
-            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=20 ,images_per_class=10)
+            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=200 ,images_per_class=10)
             print("Top 1 accuracy: %.02f%%" % (top1_accuracy))
             print("Top 5 accuracy: %.02f%%" % (top5_accuracy))
