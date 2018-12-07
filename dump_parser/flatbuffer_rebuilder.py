@@ -371,7 +371,7 @@ if __name__ == "__main__":
     [Wapprox, Wmono, colors, perm, num_weights] = approximate(op)
     new_ops = []
     num_colors = colors.shape[1]
-    # tensor that holds the monochrome tensors, before they are split
+    # tensor that holds the weights to calculate the monochrome tensor
     transformation_weights_index = [len(tensor_indexes) + i for i in range(1)]
     tensor_indexes += transformation_weights_index
     # tensor that holds the monochrome tensors, before they are split
