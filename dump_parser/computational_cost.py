@@ -378,12 +378,6 @@ if __name__ == "__main__":
     # tensor that holds the monochrome tensors, before they are split
     monotensor_index = [len(tensor_indexes) + i for i in range(1)]
     tensor_indexes += monotensor_index
-    # tensors that each hold a monochrome tensors
-    # monochrome_tensors = [len(tensor_indexes) + i for i in range(num_colors)]
-    # tensor_indexes += monochrome_tensors
-    # tensors that each hold the weights to convert one RGB image into a monochrome image
-    # rgb_to_mono_tensors = [len(tensor_indexes) + i for i in range(num_colors)]
-    # tensor_indexes += rgb_to_mono_tensors
 
     new_conv = Op(name="Conv2D")
     new_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"})
@@ -396,13 +390,10 @@ if __name__ == "__main__":
     new_conv.outputs = [new_mono_tensor]
     new_ops.append(new_conv)
 
-    # tensor that holds the weights to expand num_colors channels into more channels
     expand_weights_tensor = [len(tensor_indexes) + i for i in range(1)]
     tensor_indexes += expand_weights_tensor
     expand_biases_tensor = [len(tensor_indexes) + i for i in range(1)]
     tensor_indexes += expand_biases_tensor
-    # expand_output_tensor = [len(tensor_indexes) + i for i in range(1)]
-    # tensor_indexes += expand_biases_tensor
 
     new_conv = Op(name="DepthwiseConv2D")
     depth_multiplier = op.outputs[0].shape[3] // num_colors
@@ -419,92 +410,8 @@ if __name__ == "__main__":
     new_biases_tensor.shape = new_biases_tensor.data.shape
     new_conv.inputs.append(new_biases_tensor)
     # output
-    # new_output_tensor = Tensor(index=expand_output_tensor[0], shape=[1, op.outputs[0].shape[1], op.outputs[0].shape[2], num_colors * 4], type_name=op.inputs[0].type_name)
     new_conv.outputs.append(op.outputs[0])
     new_ops.append(new_conv)
-    # ^
-    # TODO: DepthwiseConv2D with depth_multiplier:5
-    # concat pair (extra channels)
-    # extra_concat_tensor = [len(tensor_indexes) + i for i in range(1)]
-    # tensor_indexes += extra_concat_tensor
-    # extra_concat_inputs = [new_output_tensor]
-    # new_extra_concat_tensor = Tensor(index=extra_concat_tensor[0], type_name=op.inputs[0])
-    # new_extra_concat_tensor.data = np.random.randn(1, op.outputs[0].shape[1], op.outputs[0].shape[1], op.outputs[0].shape[3] - 5 * num_colors).astype("float32")
-    # new_extra_concat_tensor.shape = new_extra_concat_tensor.data.shape
-    # # concat
-    # new_concat = Op(name="Concatenation")
-    # new_concat.options =  fix_dictionary_enum({"axis":3, "fused_activation_function":"NONE"})
-    # new_concat.inputs.append(new_output_tensor)
-    # new_concat.inputs.append(new_extra_concat_tensor)
-    # new_concat.outputs = [op.outputs[0]]
-    # new_ops.append(new_concat)
-    # ^
-    # TODO: Concatenation of the previous DepthwiseConv2D with 2 channels, for a total of 6*5 + 2 = 32
-
-    # new_split = Op(name="Split")
-    # new_split.options = fix_dictionary_enum({"axis":3, "fused_activation_function":"NONE", "num_splits":op.outputs[0].shape[3]})
-    # new_split.inputs.append(new_mono_tensor)
-    # for i in range(num_colors):
-    #     new_mono_tensor = Tensor(index=monochrome_tensors[i], shape=[1, op.inputs[0].shape[1], op.inputs[0].shape[2], 1], type_name=op.inputs[0].type_name)
-    #     new_split.outputs.append(new_mono_tensor)
-    # # new_ops.append(new_split)
-
-    # approx_weights = []
-    # for i in range(len(perm)):
-    #     # TODO: group Wmonos that use the same grayscale as input
-    #     # attribution = perm[i]
-    #     mono_weights = Wmono[i]
-    #     mono_weights = mono_weights.reshape([1, mono_weights.shape[0], mono_weights.shape[1] , 1])
-    #     approx_weights.append(mono_weights)
-    # # perform the conv that outputs the monochrome tensors
-    # for i in range(colors.shape[1]):
-    #     new_conv = Op(name="Conv2D")
-    #     new_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"})
-    #     new_conv.inputs.append(op.inputs[0])
-    #     new_weights_tensor = Tensor(index=rgb_to_mono_tensors[i], type_name=op.inputs[0].type_name)
-    #     new_weights_tensor.data = colors[:,i].reshape(1, 1, 1, colors.shape[0])
-    #     new_weights_tensor.shape = new_weights_tensor.data.shape
-    #     new_conv.inputs.append(new_weights_tensor)
-    #     new_mono_tensor = Tensor(index=monochrome_tensors[i], shape=[1, op.inputs[0].shape[1], op.inputs[0].shape[2], 1], type_name=op.inputs[0].type_name)
-    #     new_conv.outputs = [new_mono_tensor]
-    # #     new_ops.append(new_conv)
-
-    # # CHANNEL weights tensors to calculate an output channel from a monochrome tensor
-    # mono_weights_tensors = [len(tensor_indexes) + i for i in range(len(perm))]
-    # tensor_indexes += mono_weights_tensors
-    # # CHANNEL tensors that hold the bias to apply to the output channel for each monochrome tensor
-    # mono_bias_indexes = [len(tensor_indexes) + i for i in range(len(perm))]
-    # tensor_indexes += mono_bias_indexes
-    # # CHANNEL weights tensors that hold an output channel calculated from a monochrome tensor
-    # monoconv_indexes = [len(tensor_indexes) + i for i in range(len(perm))]
-    # monoconv_tensors = []
-    # tensor_indexes += monoconv_indexes
-
-    # # use the monochrome tensors from the previous step to approximate the output channels of this layer
-    # for i in range(len(perm)):
-    #     new_conv = Op(name="DepthwiseConv2D")
-    #     new_conv.options = fix_dictionary_enum({"padding":"SAME", "depth_multiplier":1, "stride_h":2, "stride_w":2, "fused_activation_function":"RELU6"})
-    #     new_conv.inputs.append(new_split.outputs[perm[i]]) # the input is the output of the corresponding depthwise convolution
-    #     new_weights_tensor = Tensor(index=mono_weights_tensors[i], shape=mono_weights.shape, type_name=op.inputs[0].type_name)
-    #     new_weights_tensor.data = approx_weights[i]
-    #     new_conv.inputs.append(new_weights_tensor)
-    #     new_bias_tensor = Tensor(index=mono_bias_indexes[i], shape=[1], type_name=op.inputs[0].type_name)
-    #     new_bias_tensor.data = np.asarray([op.inputs[2].data[i]])
-    #     new_conv.inputs.append(new_bias_tensor)
-    #     new_output_tensor = Tensor(index=monoconv_indexes[i], shape=[1, op.outputs[0].shape[1], op.outputs[0].shape[2], 1], type_name=op.inputs[0].type_name)
-    #     new_conv.outputs = [new_output_tensor]
-    #     monoconv_tensors.append(new_output_tensor)
-    #     new_ops.append(new_conv)
-    # # concatenate the output channels of this layer
-    # new_concat = Op(name="Concatenation")
-    # new_concat.options =  fix_dictionary_enum({"axis":3, "fused_activation_function":"NONE"})
-    # for i in range(len(monoconv_tensors)):
-    #     new_concat.inputs.append(monoconv_tensors[i])
-    # new_concat.outputs = [op.outputs[0]]
-    # # new_ops.append(new_concat)
-
-    # # op.inputs[1].data = Wapprox
-    # # ops = [ops[0]] + new_ops + ops[1:]
     ops = new_ops + ops[1:]
 
 
@@ -584,7 +491,7 @@ if __name__ == "__main__":
         # save flatbuffer
         converter = tf.contrib.lite.TocoConverter.from_session(sess, [input_placeholder], [last_node])
         tflite_model = converter.convert()
-        reconstructed_model = open("cost_mobilenet" + ".tflite", "wb")
+        reconstructed_model = open("cost_network" + ".tflite", "wb")
         reconstructed_model.write(tflite_model)
 
         if input_mode:
