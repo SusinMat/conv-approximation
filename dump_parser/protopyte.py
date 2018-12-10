@@ -26,7 +26,7 @@ from tf_op import Tensor, Op
 
 def approximate(op):
     W = op.inputs[1].data
-    return monochromatic_approx(W, num_colors=8, even=False)
+    return monochromatic_approx(W, num_colors=4, even=False)
 
 if __name__ == "__main__":
     op = pickle.load(open("layer.pkl", "rb"))

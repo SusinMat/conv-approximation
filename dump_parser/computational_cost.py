@@ -245,14 +245,14 @@ def op_to_tf(op, input_value):
         subgraph.append(result)
 
     elif op.name == "Concatenation":
-        # print("Concatenation input:", input_value)
+        print("Concatenation input:", input_value)
         result = tf.concat(input_value, axis=op.options["axis"])
         subgraph.append(result)
         activation_function = activation_function_to_tf(op.options["fused_activation_function"])
         if activation_function is not None:
             result = activation_function(result)
             subgraph.append(result)
-        # print("Concatenation output:", result.shape)
+        print("Concatenation output:", result.shape)
 
     elif op.name == "Split":
         num_or_size_splits_tensor = tf.constant_initializer(int(input_value.shape[op.options["axis"]]), dtype=tf.int32)
@@ -370,7 +370,50 @@ if __name__ == "__main__":
     ### Approximation starts here ###
     # pickle.dump(conv, open("layer.pkl", "wb"))
     [Wapprox, Wmono, colors, perm, num_weights] = approximate(op)
-    op.inputs[1].data = Wapprox
+    new_ops = []
+    num_colors = colors.shape[1]
+    # tensor that holds the weights to calculate the monochrome tensor
+    transformation_weights_index = [len(tensor_indexes) + i for i in range(1)]
+    tensor_indexes += transformation_weights_index
+    # tensor that holds the monochrome tensors, before they are split
+    monotensor_index = [len(tensor_indexes) + i for i in range(1)]
+    tensor_indexes += monotensor_index
+
+    new_conv = Op(name="Conv2D")
+    new_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"})
+    new_conv.inputs.append(op.inputs[0])
+    new_weights_tensor = Tensor(index=transformation_weights_index[0], type_name=op.inputs[0].type_name)
+    new_weights_tensor.data = colors.transpose().reshape(num_colors, 1, 1, colors.shape[0])
+    new_weights_tensor.shape = new_weights_tensor.data.shape
+    new_conv.inputs.append(new_weights_tensor)
+    new_mono_tensor = Tensor(index=monotensor_index[0], shape=[1, op.inputs[0].shape[1], op.inputs[0].shape[2], num_colors], type_name=op.inputs[0].type_name)
+    new_conv.outputs = [new_mono_tensor]
+    new_ops.append(new_conv)
+
+    expand_weights_tensor = [len(tensor_indexes) + i for i in range(1)]
+    tensor_indexes += expand_weights_tensor
+    expand_biases_tensor = [len(tensor_indexes) + i for i in range(1)]
+    tensor_indexes += expand_biases_tensor
+
+    new_conv = Op(name="DepthwiseConv2D")
+    depth_multiplier = op.outputs[0].shape[3] // num_colors
+    new_conv.options = fix_dictionary_enum({"padding":"SAME", "depth_multiplier":depth_multiplier, "stride_h":2, "stride_w":2, "fused_activation_function":"RELU6"})
+    new_conv.inputs.append(new_mono_tensor)
+    # weights
+    new_weights_tensor = Tensor(index=expand_weights_tensor[0], type_name=op.inputs[0].type_name)
+    new_weights_tensor.data = np.random.randn(depth_multiplier, op.inputs[1].shape[1], op.inputs[1].shape[2], num_colors).astype("float32")
+    new_weights_tensor.shape = new_weights_tensor.data.shape
+    new_conv.inputs.append(new_weights_tensor)
+    # biases
+    new_biases_tensor = Tensor(index=expand_biases_tensor[0], type_name=op.inputs[0].type_name)
+    new_biases_tensor.data = np.random.randn(num_colors * depth_multiplier).astype("float32")
+    new_biases_tensor.shape = new_biases_tensor.data.shape
+    new_conv.inputs.append(new_biases_tensor)
+    # output
+    new_conv.outputs.append(op.outputs[0])
+    new_ops.append(new_conv)
+    ops = new_ops + ops[1:]
+
 
     # Determine from input tensors which one is the network's input
     empty_indexes_set = set([tensor.index for tensor in tensors if tensor.data is None])
@@ -448,7 +491,7 @@ if __name__ == "__main__":
         # save flatbuffer
         converter = tf.contrib.lite.TocoConverter.from_session(sess, [input_placeholder], [last_node])
         tflite_model = converter.convert()
-        reconstructed_model = open("reconstructed_" + filename + ".tflite", "wb")
+        reconstructed_model = open("cost_network" + ".tflite", "wb")
         reconstructed_model.write(tflite_model)
 
         if input_mode:
@@ -467,6 +510,6 @@ if __name__ == "__main__":
             #     out_tensor = sess.run(tensor, {input_placeholder : image})
             #     print(out_tensor.flatten().tolist()[0])
         if run_xorapu:
-            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=200 ,images_per_class=10)
+            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=2, images_per_class=10)
             print("Top 1 accuracy: %.02f%%" % (top1_accuracy))
             print("Top 5 accuracy: %.02f%%" % (top5_accuracy))
