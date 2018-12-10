@@ -24,9 +24,9 @@ import xorapu
 
 from tf_op import Tensor, Op
 
-def approximate(op):
+def approximate(op, num_colors=4, even = False):
     W = op.inputs[1].data
-    return monochromatic_approx(W, num_colors=4, even=False)
+    return monochromatic_approx(W, num_colors=num_colors, even=even)
 
 if __name__ == "__main__":
     op = pickle.load(open("layer.pkl", "rb"))
