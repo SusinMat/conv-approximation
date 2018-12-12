@@ -447,8 +447,10 @@ if __name__ == "__main__":
 
     if approximate_accuracy:
         (ops, tensors) = accuracy_approximation(ops, tensors)
+        pass
     else:
         (ops, tensors) = computation_approximation(ops, tensors)
+        pass
 
     # Determine from input tensors which one is the network's input
     empty_indexes_set = set([tensor.index for tensor in tensors if tensor.data is None])
