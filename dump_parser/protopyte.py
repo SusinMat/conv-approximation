@@ -14,6 +14,7 @@ import argparse
 import ast
 import enum
 from monochromatic import monochromatic_approx
+from bisubspace_svd import bisubspace_svd_approx
 import numpy as np
 from numpy import linalg as la
 import os
@@ -24,14 +25,22 @@ import xorapu
 
 from tf_op import Tensor, Op
 
-def approximate(op, num_colors=4, even=False):
+def approximate(op, num_colors=6, even=False, strategy="monochromatic"):
     W = op.inputs[1].data
-    return monochromatic_approx(W, num_colors=num_colors, even=even)
+    bias = op.inputs[2].data
+    if strategy == "monochromatic":
+        return monochromatic_approx(W, num_colors=num_colors, even=even)
+    elif strategy == "bisubspace_svd":
+        return bisubspace_svd_approx(W)
+    else:
+        print("Error: approximation strategy '" + strategy + "' not supported.")
+        exit(1)
 
 if __name__ == "__main__":
     op = pickle.load(open("layer.pkl", "rb"))
     W = op.inputs[1].data
-    [Wapprox, Wmono, colors, perm, num_weights] = approximate(op)
+    # [Wapprox, Wmono, colors, perm, num_weights] = approximate(op)
+    Wapprox = (approximate(op, strategy="bisubspace_svd"))[0]
     print(Wapprox.shape)
 
     L2_err = la.norm(W - Wapprox) / la.norm(W)

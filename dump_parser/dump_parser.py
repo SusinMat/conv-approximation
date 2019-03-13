@@ -20,7 +20,7 @@ import pickle
 import re
 import sys
 
-from tf_op import Tensor, Op, remove_successive_duplicates
+from tf_op import *
 
 class State(enum.Enum):
     def _generate_next_value_(name, start, count, last_values):
@@ -39,7 +39,7 @@ def text_to_pickle(input_path, filename):
     f.close()
 
     # match portion of the 'tensor line' that is common to input and output tensors
-    common_info_pattern = r"\* (?P<index>\d+):s=(?P<shape>\[\d+(, \d+){0,3}\]),t=(?P<data_type>\w+)"
+    common_info_pattern = r"\* (?P<index>\d+):s=(?P<shape>\[\d+(, \d+){0,3}\]),t=(?P<data_type>\w+)(,q=(?P<quantization_parameters>\[[\w\s\-\.,]+\]))?"
 
     # match the first line
     start_pattern = re.compile(r"Operators:")
@@ -120,12 +120,19 @@ def text_to_pickle(input_path, filename):
                 shape = match.group("shape")
                 shape = ast.literal_eval(shape)
                 data_type = match.group("data_type")
-                if current_input_tensor != None:
+                quantization_parameters = match.group("quantization_parameters")
+                if quantization_parameters is not None:
+                    quantization_parameters = quantization_parameters_list_from_str(quantization_parameters)
+                    quantization_parameters = Quantization(min=quantization_parameters[0], max=quantization_parameters[1], scale=quantization_parameters[2], zero_point=quantization_parameters[3])
+                else:
+                    quantization_parameters = None
+                if current_input_tensor is not None:
                     current_op.inputs.append(current_input_tensor)
                 current_input_tensor = Tensor()
                 current_input_tensor.index = index
                 current_input_tensor.shape = shape
                 current_input_tensor.type_name = data_type
+                current_input_tensor.quantization = quantization_parameters
             else:
                 state = State.OUTPUT_HEADER
                 if current_input_tensor != None:
@@ -148,6 +155,10 @@ def text_to_pickle(input_path, filename):
             else:
                 data = ast.literal_eval(data)
                 data = np.asarray(data, dtype=getattr(np, current_input_tensor.type_name.lower()))
+            if current_input_tensor.quantization is not None:
+                if data is not None:
+                    data = dequantize(data, current_input_tensor.quantization.scale, current_input_tensor.quantization.zero_point)
+                current_input_tensor.type_name = "FLOAT32"
             current_input_tensor.data = data
             state = State.INPUT_INFO
 
@@ -167,10 +178,18 @@ def text_to_pickle(input_path, filename):
                 shape = match.group("shape")
                 shape = ast.literal_eval(shape)
                 data_type = match.group("data_type")
+                quantization_parameters = match.group("quantization_parameters")
+                if quantization_parameters != None:
+                    quantization_parameters = quantization_parameters_list_from_str(quantization_parameters)
+                    quantization_parameters = Quantization(min=quantization_parameters[0], max=quantization_parameters[1], scale=quantization_parameters[2], zero_point=quantization_parameters[3])
+                else:
+                    quantization_parameters = None
                 current_output_tensor = Tensor()
                 current_output_tensor.index = index
                 current_output_tensor.shape = shape
                 current_output_tensor.type_name = data_type
+                current_output_tensor.type_name = "FLOAT32"
+                current_output_tensor.quantization = quantization_parameters
                 current_op.outputs.append(current_output_tensor)
             else:
                 state = State.OP
