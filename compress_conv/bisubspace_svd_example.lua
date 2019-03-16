@@ -1,4 +1,7 @@
-W = randn(256, 5, 5, 96); --create random weights with 96 input channels, 256 output channels and 5x5 filters
+W = randn(256, 5, 5, 96); % --create random weights with 96 input channels, 256 output channels and 5x5 filters
+
+WW = W(:,:);
+fprintf("W(:,:) -- %s\n", mat2str(size(WW)));
 
 iclust = 2; % number of input clusters
 oclust = 2; % number of output clusters

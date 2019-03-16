@@ -1,7 +1,7 @@
 function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, iratio, oclust, oratio, conseq, in_s, out_s)
     fprintf('iclust = %d, iratio = %f, oclust = %d, oratio = %f, conseq = %d\n', iclust, iratio, oclust, oratio, conseq);
     oclust_sz = size(W, 1) / oclust;
-    iclust_sz = size(W, 4) / iclust;    
+    iclust_sz = size(W, 4) / iclust;
     
     odegree = floor(size(W, 1) * oratio / oclust);
     idegree = floor(size(W, 4) * iratio / iclust);
@@ -19,7 +19,7 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
     fprintf('Conv : %f\n', approx_ops(2) / sum(approx_ops));
     fprintf('Transform 3 : %f\n', approx_ops(3) / sum(approx_ops));
     if (~conseq)
-        WW = W(:,:);
+        WW = W(:,:); % shape is [output_channels, everything_else]
         idx_output = litekmeans(WW', oclust);
         WW = permute(W, [4 2 3 1]);
         WW = WW(:, :);
@@ -57,7 +57,6 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
             Z_ = v(:, 1:idegree);
             Wtmptmptmp_ = C_ * Z_';            
             Z(:, :, :, :, i, o) = reshape(Z_, [odegree, size(W, 2), size(W, 3), idegree]);
-            
         end
     end
 

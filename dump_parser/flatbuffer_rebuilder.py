@@ -323,7 +323,8 @@ def accuracy_approximation(ops, tensors, op_name="Conv2D", index=0):
                 break
             count += 1
 
-    pickle.dump(op, open("layer.pkl", "wb"))
+    # pickle.dump(op, open("layer.pkl", "wb"))
+    # exit()
     ### Approximation starts here ###
     [Wapprox, Wmono, colors, perm, num_weights] = approximate(op)
     op.inputs[1].data = Wapprox
@@ -558,7 +559,7 @@ if __name__ == "__main__":
             #     out_tensor = sess.run(tensor, {input_placeholder : image})
             #     print(out_tensor.flatten().tolist()[0])
         if run_xorapu:
-            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=400, images_per_class=20)
+            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=40, images_per_class=10)
             print("Top 1 accuracy: %.02f%%" % (top1_accuracy))
             print("Top 5 accuracy: %.02f%%" % (top5_accuracy))
             if top1_accuracy > 92.00 and False:
