@@ -28,14 +28,17 @@ for j=1:outiters
         [u, ~, label] = unique(label);   % remove empty clusters
         k = length(u);
         E = sparse(1 : n, label, 1, n, k, n);  % transform label into indicator matrix
+	% printf('%s\n', mat2str(label));
+	% printf('%s\n', mat2str(E));
         m = X * full(E * spdiags(1 ./ sum(E, 1)', 0, k, k));    % compute m of each cluster
+	printf('m--%s\n', mat2str(size(m)));
         last = label;
         %[~,label] = max(bsxfun(@minus,m'*X,dot(m,m,1)'/2),[],1); % assign samples to the nearest centers
         [label, ener] = constrained_assignment(X, m, n / k);
         iters = iters + 1;
     end
     
-    [~,~,label] = unique(label);            
+    [~,~,label] = unique(label);
     
     if ener < minener
         outlabel = label;
@@ -61,13 +64,17 @@ maxvalue = max(w(:))+1;
 %[ds2,I2]=sort(w,1,'ascend');
 
 out=I(:,1);
+printf('out--%s\n', mat2str(size(out)));
 for m=1:M
     taille(m)=length(find(out==m));
 end
+printf('taille == %s\n', mat2str(taille));
 [hmany,nextclust]=max(taille);
 printf('nextclust == %d\n', nextclust);
+printf('hmany == %d\n', hmany);
 
-visited=zeros(1,M);
+% visited=zeros(1, M);
+visited=zeros(M);
 
 
 go=(hmany > K);
@@ -78,7 +85,7 @@ while go
     aux=find(out==nextclust);
 
     for l=1:length(aux)
-        slice(l) = ds(aux(l),choices(aux(l))+1)-ds(aux(l),choices(aux(l)));
+        slice(l) = ds(aux(l), choices(aux(l)) + 1) - ds(aux(l), choices(aux(l)));
     end
     [~,tempo] = sort(slice,'descend');
     clear slice;
@@ -116,12 +123,16 @@ function [ker,kern]=kernelizationbis(data,databis)
 
     [L,N]=size(data);
     [M,N]=size(databis);
+    printf('data--%s\n', mat2str(size(data)));
+    printf('databis--%s\n', mat2str(size(databis)));
 
     printf('sum(data.^2, 2)--%s\n', mat2str(size(sum(data.^2, 2))));
     norms=sum(data.^2, 2) * ones(1, M);
     printf('norms--%s\n', mat2str(size(norms)));
-    normsbis=sum(databis.^2,2)*ones(1,L);
-    ker=norms+normsbis'-2*data*(databis');
+    normsbis = sum(databis.^2, 2) * ones(1, L);
+    printf('normsbis--%s\n', mat2str(size(normsbis)));
+    ker = norms + normsbis' - 2 * data * (databis');
+    printf('ker--%s\n', mat2str(size(ker)));
 end
 
 
