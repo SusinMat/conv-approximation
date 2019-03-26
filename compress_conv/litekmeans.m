@@ -9,7 +9,7 @@ n = size(X,2);
 last = 0;
 
 minener = 1e+20;
-outiters=30;
+outiters=1;
 maxiters=1000;
 
 for j=1:outiters
@@ -21,7 +21,11 @@ for j=1:outiters
     m = X(:,aux(1:k));
     %[~,label] = max(bsxfun(@minus,m'*X,dot(m,m,1)'/2),[],1); % assign samples to the nearest centers
     [label] = constrained_assignment(X, m, n/k);
-
+    assignment_distribution = zeros(k, 1);
+    for i = 1:length(label)
+        assignment_distribution(label(i)) = assignment_distribution(label(i)) + 1;
+    end
+    % printf('assignment_distribution == %s\n', mat2str(assignment_distribution));
     iters=0;
 
     while any(label ~= last) && iters < maxiters
@@ -35,6 +39,11 @@ for j=1:outiters
         last = label;
         %[~,label] = max(bsxfun(@minus,m'*X,dot(m,m,1)'/2),[],1); % assign samples to the nearest centers
         [label, ener] = constrained_assignment(X, m, n / k);
+	assignment_distribution = zeros(k, 1);
+	for i = 1:length(label)
+	    assignment_distribution(label(i)) = assignment_distribution(label(i)) + 1;
+	end
+	% printf('assignment_distribution == %s\n', mat2str(assignment_distribution));
         iters = iters + 1;
     end
     
@@ -55,27 +64,29 @@ end
 function [out,ener]=constrained_assignment(X, C, K)
 %we assign samples to the nearest centers, but with the constraint that each center receives K samples
 w=kernelizationbis(X',C');
+% printf('w == %s\n', mat2str(w));
 
 [N,M]=size(w); %N number of samples, M number of centers
 
-maxvalue = max(w(:))+1;
+% maxvalue = max(w(:))+1;
 
 [ds,I]=sort(w,2,'ascend');
 %[ds2,I2]=sort(w,1,'ascend');
+% printf('ds == %s\n', mat2str(ds));
+% printf('I == %s\n', mat2str(I));
 
 out=I(:,1);
-printf('out--%s\n', mat2str(size(out)));
+% printf('out--%s\n', mat2str(size(out)));
 for m=1:M
     taille(m)=length(find(out==m));
 end
-printf('taille == %s\n', mat2str(taille));
+% printf('taille == %s\n', mat2str(taille));
 [hmany,nextclust]=max(taille);
-printf('nextclust == %d\n', nextclust);
-printf('hmany == %d\n', hmany);
+% printf('nextclust == %d\n', nextclust);
+% printf('hmany == %d\n', hmany);
 
 % visited=zeros(1, M);
 visited=zeros(M);
-
 
 go=(hmany > K);
 choices=ones(N,1);
