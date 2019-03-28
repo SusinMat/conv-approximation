@@ -51,14 +51,18 @@ def constrained_assignment(X, C, K): # D?
     # out = I[:, 0, np.newaxis]
     out = I[:, 0]
     print("out--" + str(out.shape))
+    # print(out)
     taille = []
     for m in range(M):
-        taille.append(len(np.where(out == m)))
+        found = np.where(out == m)
+        # print(found)
+        found = found[0]
+        taille.append(len(found))
     print("taille == " + str(taille))
     nextclust = np.argmax(taille)
     hmany = taille[nextclust]
     print("nextclust == " + str(nextclust))
-    print("hmany == " + str(hmany))
+    print("hmany == %d ; nextclust == %d" % (hmany, nextclust))
 
     visited = np.zeros([M], dtype=np.int)
     choices = np.zeros([N, 1], dtype=np.int)
@@ -107,8 +111,11 @@ def litekmeans(X, k):
     for j in range(outiters):
         print("* Iter %d / %d" % (j + 1, outiters), file=sys.stderr)
         np.random.seed(seed=0)
-        aux = np.random.permutation(n)
-        m = X[:, aux[0:k]]
+        aux = [i + 1 for i in np.random.permutation(n)]
+        aux = [64, 63, 43, 24, 7, 15, 45, 12, 20, 19, 46, 18, 60, 10, 29, 6, 50, 62, 23, 13, 2, 61, 41, 27, 22, 16, 25, 14, 34, 9, 31, 39, 1, 59, 35, 3, 58, 47, 17, 52, 44, 33, 36, 40, 49, 56, 28, 51, 57, 4, 54, 11, 38, 8, 32, 48, 37, 55, 5, 26, 21, 30, 42, 53]
+        aux = [i - 1 for i in aux]
+        aux = np.array(aux)
+        m = X[:, aux[:k]]
         [label, _] = constrained_assignment(X, m, n / k)
         assignment_distribution = np.zeros([k], dtype=np.int)
         for assignment in label:
@@ -148,6 +155,7 @@ def litekmeans(X, k):
 
 def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=False, in_s=0, out_s=0):
     W.shape # (filters, height, width, channels)
+    print("||W|| = " + str(la.norm(W)))
     # W = W.transpose([0, 3, 1, 2]) # [filters, channels, height, width]
     print("iclust = %d, iratio = %f, oclust = %d, oratio = %f, conseq = %d" % (iclust, iratio, oclust, oratio, conseq))
     print("in_s == %d ; out_s == %d ;" % (in_s, out_s))
@@ -170,9 +178,11 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
     print("Tramsform 1 : %f" % (approx_ops[0] / np.sum(approx_ops)))
     print("Conv : %f" % (approx_ops[1] / np.sum(approx_ops)))
     print("Tramsform 3 : %f" % (approx_ops[2] / np.sum(approx_ops)))
+    print("----------------")
 
     if not conseq:
         WW = np.reshape(W, (W_shape[0], np.prod(W_shape[1:4])))
+        print(WW.transpose())
         idx_output = litekmeans(WW.transpose(), oclust)
         # print_2d_array(WW)
         # WW = W.transpose([3, 1, 2, 0])
@@ -186,7 +196,7 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
 if __name__ == "__main__":
     op = pickle.load(open("layer.pkl", "rb"))
     W = op.inputs[1].data
-    # print("[%s]" % (", ".join(map(str, W.flatten().tolist()))))
+    # print("[%s];" % (", ".join([("%e" % i) for i in W.flatten().tolist()])))
     input_image = op.inputs[0]
     output_image = op.outputs[0]
     in_size = input_image.shape[1]
