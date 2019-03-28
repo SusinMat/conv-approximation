@@ -155,7 +155,6 @@ def litekmeans(X, k):
 
 def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=False, in_s=0, out_s=0):
     W.shape # (filters, height, width, channels)
-    print("||W|| = " + str(la.norm(W)))
     # W = W.transpose([0, 3, 1, 2]) # [filters, channels, height, width]
     print("iclust = %d, iratio = %f, oclust = %d, oratio = %f, conseq = %d" % (iclust, iratio, oclust, oratio, conseq))
     print("in_s == %d ; out_s == %d ;" % (in_s, out_s))
@@ -181,7 +180,7 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
     print("----------------")
 
     if not conseq:
-        WW = np.reshape(W, (W_shape[0], np.prod(W_shape[1:4])))
+        WW = np.reshape(W, (W_shape[0], np.prod(W_shape[1:4])), order="F")
         print(WW.transpose())
         idx_output = litekmeans(WW.transpose(), oclust)
         # print_2d_array(WW)
@@ -196,7 +195,7 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
 if __name__ == "__main__":
     op = pickle.load(open("layer.pkl", "rb"))
     W = op.inputs[1].data
-    # print("[%s];" % (", ".join([("%e" % i) for i in W.flatten().tolist()])))
+    # print("[%s];" % (" ".join([("%e" % i) for i in W.flatten().tolist()])))
     input_image = op.inputs[0]
     output_image = op.outputs[0]
     in_size = input_image.shape[1]
@@ -208,6 +207,12 @@ if __name__ == "__main__":
     number_of_seeds = 2
 
     print("W--" + str(W.shape))
+
+    W_shape = np.asarray(W.shape, dtype=np.int)
+    WW = np.reshape(W, (W_shape[0], np.prod(W_shape[1:4])), order="F")
+    print("WW--" + str(WW.shape))
+    # print(WW)
+    print("||W|| = %f" % la.norm(W))
     bisubspace_svd_approx(W, in_s=in_size, out_s = out_size)
 
     # litekmeans(X, number_of_seeds)
