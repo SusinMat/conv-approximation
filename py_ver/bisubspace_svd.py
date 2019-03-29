@@ -24,6 +24,7 @@ def print_2d_array(array):
     print(array_string)
     return
 
+
 def kernelizationbis(data, databis):
     L = data.shape[0]
     M = databis.shape[0]
@@ -37,9 +38,11 @@ def kernelizationbis(data, databis):
     print("ker--" + str(ker.shape))
     return ker
 
+
 def constrained_assignment(X, C, K): # D?
     # assign samples to their nearest centers, with the constraint that each center receives K samples
     w = kernelizationbis(X.transpose(), C.transpose())
+    K = int(K)
     # print("w == " + str(w))
     [N, M] = [w.shape[0], w.shape[1]]
 
@@ -64,19 +67,21 @@ def constrained_assignment(X, C, K): # D?
     print("nextclust == " + str(nextclust))
     print("hmany == %d ; nextclust == %d" % (hmany, nextclust))
 
-    visited = np.zeros([M], dtype=np.int)
-    choices = np.zeros([N, 1], dtype=np.int)
+    visited = np.zeros(M, dtype=np.int)
+    choices = np.zeros(N, dtype=np.int)
 
     while hmany > K:
         aux = np.where(out == nextclust)
         aux = np.asarray(aux, dtype=np.int)
+        aux = aux.flatten()
         slice_ = []
-        for l in range(len(aux)):
+        for l in range(aux.shape[0]):
             slice_.append(ds[aux[l], choices[aux[l]] + 1] - ds[aux[l], choices[aux[l]]])
         slice_ = np.asarray(slice_)
         tempo = np.argsort(-slice_)
 
-        saved = aux[tempo[0:K]]
+        print("tempo[0:K] ==\n" + str(tempo[0 : K]))
+        saved = aux[tempo[0 : K]]
         out[saved] = nextclust
 
         visited[nextclust] = 1
@@ -96,6 +101,7 @@ def constrained_assignment(X, C, K): # D?
         ener += w[n, out[n]]
 
     return [out, ener]
+
 
 def litekmeans(X, k):
     # X : d-by-n data matrix
@@ -153,6 +159,7 @@ def litekmeans(X, k):
 
     return [outlabel, outm]
 
+
 def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=False, in_s=0, out_s=0):
     W.shape # (filters, height, width, channels)
     # W = W.transpose([0, 3, 1, 2]) # [filters, channels, height, width]
@@ -181,9 +188,10 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
 
     if not conseq:
         WW = np.reshape(W, (W_shape[0], np.prod(W_shape[1:4])), order="F")
-        print(WW.transpose())
-        idx_output = litekmeans(WW.transpose(), oclust)
-        # print_2d_array(WW)
+        # print(WW.transpose())
+        idx_output = np.asarray(litekmeans(WW.transpose(), oclust)[0])
+        print("idx_output--" + str(idx_output.shape))
+        print("[" + ";".join([str(i + 1) for i in idx_output]) + "]")
         # WW = W.transpose([3, 1, 2, 0])
         # WW = WW[:, :]
         # idx_input = litekmeans(WW.transpose(), iclust)

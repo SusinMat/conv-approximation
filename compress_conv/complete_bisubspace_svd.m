@@ -1,68 +1,22 @@
-function [outlabel,outm] = litekmeans(X, k)
-% Perform k-means clustering.
-%   X: d x n data matrix
-%   k: number of seeds
-% Written by Michael Chen (sth4nth@gmail.com).
-% Modified by Joan Bruna to have constant cluster sizes
+function [ker,kern]=kernelizationbis(data,databis)
 
-    n = size(X,2);
-    last = 0;
+    [L,N]=size(data);
+    [M,N]=size(databis);
+    printf('data--%s\n', mat2str(size(data)));
+    printf('databis--%s\n', mat2str(size(databis)));
 
-    minener = 1e+20;
-    outiters=1;
-    maxiters=1000;
-
-    for j=1:outiters
-        fprintf(2, '* Iter %d / %d\n', j, outiters);
-        % s = RandStream('mt19937ar','Seed',j);
-        rand('seed', 0);
-        % aux=randperm(s, n);
-        aux=randperm(n);
-        m = X(:,aux(1:k));
-	% printf('%s\n', mat2str(m));
-        %[~,label] = max(bsxfun(@minus,m'*X,dot(m,m,1)'/2),[],1); % assign samples to the nearest centers
-        [label] = constrained_assignment(X, m, n/k);
-        assignment_distribution = zeros(k, 1);
-        for i = 1:length(label)
-            assignment_distribution(label(i)) = assignment_distribution(label(i)) + 1;
-        end
-        % printf('assignment_distribution == %s\n', mat2str(assignment_distribution));
-        iters=0;
-
-        while any(label ~= last) && iters < maxiters
-            [u, ~, label] = unique(label);   % remove empty clusters
-            k = length(u);
-            E = sparse(1 : n, label, 1, n, k, n);  % transform label into indicator matrix
-    	% printf('%s\n', mat2str(label));
-    	% printf('%s\n', mat2str(E));
-            m = X * full(E * spdiags(1 ./ sum(E, 1)', 0, k, k));    % compute m of each cluster
-    	printf('m--%s\n', mat2str(size(m)));
-            last = label;
-            %[~,label] = max(bsxfun(@minus,m'*X,dot(m,m,1)'/2),[],1); % assign samples to the nearest centers
-            [label, ener] = constrained_assignment(X, m, n / k);
-    	assignment_distribution = zeros(k, 1);
-    	for i = 1:length(label)
-    	    assignment_distribution(label(i)) = assignment_distribution(label(i)) + 1;
-    	end
-    	% printf('assignment_distribution == %s\n', mat2str(assignment_distribution));
-            iters = iters + 1;
-        end
-
-        [~,~,label] = unique(label);
-
-        if ener < minener
-            outlabel = label;
-            outm = m;
-            minener = ener;
-        end
-
-    end
-
-end % function litekmeans
+    % printf('sum(data.^2, 2)--%s\n', mat2str(size(sum(data.^2, 2))));
+    norms=sum(data.^2, 2) * ones(1, M);
+    printf('norms--%s\n', mat2str(size(norms)));
+    normsbis = sum(databis.^2, 2) * ones(1, L);
+    printf('normsbis--%s\n', mat2str(size(normsbis)));
+    ker = norms + normsbis' - 2 * data * (databis');
+    printf('ker--%s\n', mat2str(size(ker)));
+end % function kernalizationbis
 
 
 function [out,ener]=constrained_assignment(X, C, K)
-% Assign samples to the nearest centers, but with the constraint that each center receives K samples
+% Assign samples to the nearest centers, but with the constraint that each center receives K samplesA
     w=kernelizationbis(X',C');
     % printf('%s\n', mat2str(w));
 
@@ -83,8 +37,10 @@ function [out,ener]=constrained_assignment(X, C, K)
 	% printf('%s\n', mat2str(found));
         taille(m)=length(find(out==m));
     end
+    printf('taille == %s\n', mat2str(taille));
     % printf('taille == %s\n', mat2str(taille));
     [hmany,nextclust]=max(taille);
+    printf('hmany == %d ; nextclust == %d\n', hmany, nextclust);
     % printf('nextclust == %d\n', nextclust);
     % printf('hmany == %d\n', hmany);
 
@@ -97,15 +53,17 @@ function [out,ener]=constrained_assignment(X, C, K)
     while go
         %fprintf('%d %d \n', nextclust, hmany)
         aux=find(out==nextclust);
-
         for l=1:length(aux)
             slice(l) = ds(aux(l), choices(aux(l)) + 1) - ds(aux(l), choices(aux(l)));
         end
+	printf('slice--%s\n', mat2str(size(slice)));
         [~,tempo] = sort(slice,'descend');
         clear slice;
         %slice=w(aux,nextclust);
         %[~,tempo]=sort(slice,'ascend');
 
+	
+	printf('tempo[0:K] ==\n%s\n', mat2str(tempo(1:K)));
         saved = aux(tempo(1:K));
         out(saved) = nextclust;
 
@@ -135,21 +93,66 @@ function [out,ener]=constrained_assignment(X, C, K)
 end % function constrained_assignement
 
 
-function [ker,kern]=kernelizationbis(data,databis)
+function [outlabel,outm] = litekmeans(X, k)
+% Perform k-means clustering.
+%   X: d x n data matrix
+%   k: number of seeds
+% Written by Michael Chen (sth4nth@gmail.com).
+% Modified by Joan Bruna to have constant cluster sizes
 
-    [L,N]=size(data);
-    [M,N]=size(databis);
-    printf('data--%s\n', mat2str(size(data)));
-    printf('databis--%s\n', mat2str(size(databis)));
+    n = size(X,2);
+    last = 0;
 
-    % printf('sum(data.^2, 2)--%s\n', mat2str(size(sum(data.^2, 2))));
-    norms=sum(data.^2, 2) * ones(1, M);
-    printf('norms--%s\n', mat2str(size(norms)));
-    normsbis = sum(databis.^2, 2) * ones(1, L);
-    printf('normsbis--%s\n', mat2str(size(normsbis)));
-    ker = norms + normsbis' - 2 * data * (databis');
-    printf('ker--%s\n', mat2str(size(ker)));
-end % function kernalizationbis
+    minener = 1e+20;
+    outiters=1;
+    maxiters=1000;
+
+    for j=1:outiters
+        fprintf(2, '* Iter %d / %d\n', j, outiters);
+        % s = RandStream('mt19937ar','Seed',j);
+        rand('seed', 0);
+        % aux=randperm(s, n);
+        aux=randperm(n);
+        m = X(:,aux(1:k));
+	% printf('%s\n', mat2str(m));
+        %[~,label] = max(bsxfun(@minus,m'*X,dot(m,m,1)'/2),[],1); % assign samples to the nearest centers
+        [label] = constrained_assignment(X, m, n/k);
+        assignment_distribution = zeros(k, 1);
+        for i = 1:length(label)
+            assignment_distribution(label(i)) = assignment_distribution(label(i)) + 1;
+        end
+        % printf('assignment_distribution == %s\n', mat2str(assignment_distribution));
+
+        iters=0;
+
+        while any(label ~= last) && iters < maxiters
+            [u, ~, label] = unique(label);   % remove empty clusters
+            k = length(u);
+            E = sparse(1 : n, label, 1, n, k, n);  % transform label into indicator matrix
+    	    % printf('%s\n', mat2str(label));
+    	    % printf('%s\n', mat2str(E));
+            m = X * full(E * spdiags(1 ./ sum(E, 1)', 0, k, k));    % compute m of each cluster
+    	    % printf('m--%s\n', mat2str(size(m)));
+            last = label;
+            %[~,label] = max(bsxfun(@minus,m'*X,dot(m,m,1)'/2),[],1); % assign samples to the nearest centers
+            [label, ener] = constrained_assignment(X, m, n / k);
+    	    assignment_distribution = zeros(k, 1);
+    	    for i = 1:length(label)
+    	        assignment_distribution(label(i)) = assignment_distribution(label(i)) + 1;
+    	    end
+    	    % printf('assignment_distribution == %s\n', mat2str(assignment_distribution));
+            iters = iters + 1;
+        end
+
+        [~,~,label] = unique(label);
+
+        if ener < minener
+            outlabel = label;
+            outm = m;
+            minener = ener;
+        end
+    end
+end % function litekmeans
 
 
 function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, iratio, oclust, oratio, conseq, in_s, out_s)
@@ -176,9 +179,11 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
 
     if (~conseq)
         WW = W(:,:); % shape is [output_channels, everything_else]
-	printf('%s\n', mat2str(WW'));
+	% printf('%s\n', mat2str(WW'));
 	% printf('%s\n', mat2str(WW'));
         idx_output = litekmeans(WW', oclust);
+	printf('idx_output--%s\n', mat2str(size(idx_output)));
+	printf('%s\n', mat2str(idx_output));
 	exit();
         WW = permute(W, [4 2 3 1]);
         WW = WW(:, :);
