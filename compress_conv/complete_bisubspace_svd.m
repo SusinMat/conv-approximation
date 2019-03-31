@@ -183,11 +183,11 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
 	% printf('%s\n', mat2str(WW'));
         idx_output = litekmeans(WW', oclust);
 	printf('idx_output--%s\n', mat2str(size(idx_output)));
-	printf('%s\n', mat2str(idx_output));
-	exit();
+	% printf('%s\n', mat2str(idx_output));
         WW = permute(W, [4 2 3 1]);
         WW = WW(:, :);
         idx_input = litekmeans(WW', iclust);
+	exit();
     else
         for i = 1 : iclust
             idx_input(((i - 1) * iclust_sz + 1) : (i * iclust_sz)) = i;

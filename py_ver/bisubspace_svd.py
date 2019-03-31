@@ -118,7 +118,7 @@ def litekmeans(X, k):
         print("* Iter %d / %d" % (j + 1, outiters), file=sys.stderr)
         np.random.seed(seed=0)
         aux = [i + 1 for i in np.random.permutation(n)]
-        aux = [64, 63, 43, 24, 7, 15, 45, 12, 20, 19, 46, 18, 60, 10, 29, 6, 50, 62, 23, 13, 2, 61, 41, 27, 22, 16, 25, 14, 34, 9, 31, 39, 1, 59, 35, 3, 58, 47, 17, 52, 44, 33, 36, 40, 49, 56, 28, 51, 57, 4, 54, 11, 38, 8, 32, 48, 37, 55, 5, 26, 21, 30, 42, 53]
+        # aux = [64, 63, 43, 24, 7, 15, 45, 12, 20, 19, 46, 18, 60, 10, 29, 6, 50, 62, 23, 13, 2, 61, 41, 27, 22, 16, 25, 14, 34, 9, 31, 39, 1, 59, 35, 3, 58, 47, 17, 52, 44, 33, 36, 40, 49, 56, 28, 51, 57, 4, 54, 11, 38, 8, 32, 48, 37, 55, 5, 26, 21, 30, 42, 53]
         aux = [i - 1 for i in aux]
         aux = np.array(aux)
         m = X[:, aux[:k]]
@@ -191,10 +191,11 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
         # print(WW.transpose())
         idx_output = np.asarray(litekmeans(WW.transpose(), oclust)[0])
         print("idx_output--" + str(idx_output.shape))
-        print("[" + ";".join([str(i + 1) for i in idx_output]) + "]")
-        # WW = W.transpose([3, 1, 2, 0])
-        # WW = WW[:, :]
-        # idx_input = litekmeans(WW.transpose(), iclust)
+        # print("[" + ";".join([str(i + 1) for i in idx_output]) + "]")
+        WW = W.transpose([3, 1, 2, 0])
+        WW = np.reshape(WW, (WW.shape[0], np.prod(WW.shape[1:4])), order="F")
+        idx_input = litekmeans(WW.transpose(), iclust)
+        exit()
 
     # Wapprox = W.transpose([0, 2, 3, 1])
     Wapprox = W
