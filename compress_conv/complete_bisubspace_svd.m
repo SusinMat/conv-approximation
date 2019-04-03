@@ -1,3 +1,33 @@
+#!/usr/bin/env octave
+
+global seed;
+
+function [r] = get_rand_int(n)
+	global seed;
+	m = 100003;
+	a = 1103515245;
+	c = 12345;
+	seed = mod(a * seed + c, m);
+	% printf('seed after == %d\n', seed);
+	r = mod(seed, n);
+end
+
+function [array] = random_permutation(n)
+	array = [1 : n];
+	if n == 1
+		return
+	end
+	for i = n : -1 : 2
+		% j = randi([1, i], 1);
+		j = get_rand_int(i) + 1;
+		% printf('j == %d\n', j);
+		aux = array(i);
+		array(i) = array(j);
+		array(j) = aux;
+	end
+end
+
+
 function [ker,kern]=kernelizationbis(data,databis)
 
     [L,N]=size(data);
@@ -63,7 +93,7 @@ function [out,ener]=constrained_assignment(X, C, K)
         %[~,tempo]=sort(slice,'ascend');
 
 	
-	printf('tempo[0:K] ==\n%s\n', mat2str(tempo(1:K)));
+	printf('tempo[0:K] ==\n    %s\n', mat2str(tempo(1:K)));
         saved = aux(tempo(1:K));
         out(saved) = nextclust;
 
@@ -112,7 +142,8 @@ function [outlabel,outm] = litekmeans(X, k)
         % s = RandStream('mt19937ar','Seed',j);
         rand('seed', 0);
         % aux=randperm(s, n);
-        aux=randperm(n);
+        % aux=randperm(n);
+        aux=random_permutation(n);
         m = X(:,aux(1:k));
 	% printf('%s\n', mat2str(m));
         %[~,label] = max(bsxfun(@minus,m'*X,dot(m,m,1)'/2),[],1); % assign samples to the nearest centers
@@ -287,4 +318,5 @@ idegree = floor(size(W, 4) * iratio / iclust);
 in_s = 147;
 out_s = 147;
 fprintf('||W|| = %e\n', norm(W(:)));
+seed = 0;
 [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, iratio, oclust, oratio, 0, in_s, out_s);

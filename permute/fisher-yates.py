@@ -2,7 +2,7 @@
 
 import numpy as np
 
-seed = 2500
+seed = 0
 
 def get_rand_int(n):
     global seed
@@ -28,7 +28,7 @@ def random_permutation(n):
     return array
 
 # np.random.seed(0)
-print(random_permutation(640) + 1)
+print(random_permutation(64000) + 1)
 exit()
 
 for i in range(500):

@@ -28,8 +28,8 @@ function [array] = random_permutation(n)
 end
 
 % rand('seed', 0);
-seed = 2500;
-printf('%s\n', mat2str(random_permutation(640)));
+seed = 0;
+printf('%s\n', mat2str(random_permutation(64000)));
 exit()
 for i = 1 : 500
 	get_rand_int(2);

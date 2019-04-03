@@ -8,6 +8,8 @@ from scipy.cluster.vq import kmeans2, whiten
 import sys
 import tf_op
 
+seed = 0
+
 def nextpow2(x):
     return np.ceil(np.log2(np.abs(x)))
 
@@ -24,6 +26,30 @@ def print_2d_array(array):
     print(array_string)
     return
 
+seed = 0
+
+def get_rand_int(n):
+    global seed
+    m = 100003
+    a = 1103515245
+    c = 12345
+    seed = (a * seed + c) % m
+    # print("seed after == " + str(seed))
+    r = seed % n
+    return r
+
+def random_permutation(n):
+    array = np.arange(n, dtype=np.int)
+    if n == 1:
+        return array
+    for i in range(n - 1, 0, -1):
+        # j = np.random.randint(0, i)
+        j = get_rand_int(i + 1)
+        # print("j == " + str(j))
+        aux = array[i]
+        array[i] = array[j]
+        array[j] = aux
+    return array
 
 def kernelizationbis(data, databis):
     L = data.shape[0]
@@ -80,7 +106,7 @@ def constrained_assignment(X, C, K): # D?
         slice_ = np.asarray(slice_)
         tempo = np.argsort(-slice_)
 
-        print("tempo[0:K] ==\n" + str(tempo[0 : K]))
+        print("tempo[0:K] ==\n    " + str(tempo[0 : K]))
         saved = aux[tempo[0 : K]]
         out[saved] = nextclust
 
@@ -117,10 +143,11 @@ def litekmeans(X, k):
     for j in range(outiters):
         print("* Iter %d / %d" % (j + 1, outiters), file=sys.stderr)
         np.random.seed(seed=0)
-        aux = [i + 1 for i in np.random.permutation(n)]
+        # aux = [i + 1 for i in np.random.permutation(n)]
         # aux = [64, 63, 43, 24, 7, 15, 45, 12, 20, 19, 46, 18, 60, 10, 29, 6, 50, 62, 23, 13, 2, 61, 41, 27, 22, 16, 25, 14, 34, 9, 31, 39, 1, 59, 35, 3, 58, 47, 17, 52, 44, 33, 36, 40, 49, 56, 28, 51, 57, 4, 54, 11, 38, 8, 32, 48, 37, 55, 5, 26, 21, 30, 42, 53]
-        aux = [i - 1 for i in aux]
-        aux = np.array(aux)
+        # aux = [i - 1 for i in aux]
+        # aux = np.array(aux)
+        aux = random_permutation(n)
         m = X[:, aux[:k]]
         [label, _] = constrained_assignment(X, m, n / k)
         assignment_distribution = np.zeros([k], dtype=np.int)
@@ -222,6 +249,7 @@ if __name__ == "__main__":
     print("WW--" + str(WW.shape))
     # print(WW)
     print("||W|| = %f" % la.norm(W))
+    seed = 0
     bisubspace_svd_approx(W, in_s=in_size, out_s = out_size)
 
     # litekmeans(X, number_of_seeds)
