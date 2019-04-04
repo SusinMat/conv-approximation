@@ -208,6 +208,7 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
     fprintf('Transform 3 : %f\n', approx_ops(3) / sum(approx_ops));
     fprintf('----------------\n');
 
+    % conseq = ~conseq
     if (~conseq)
         WW = W(:,:); % shape is [output_channels, everything_else]
 	% printf('%s\n', mat2str(WW'));
@@ -218,7 +219,6 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
         WW = permute(W, [4 2 3 1]);
         WW = WW(:, :);
         idx_input = litekmeans(WW', iclust);
-	exit();
     else
         for i = 1 : iclust
             idx_input(((i - 1) * iclust_sz + 1) : (i * iclust_sz)) = i;
@@ -231,6 +231,9 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
     C = zeros(size(W, 4) / iclust, idegree, iclust, oclust);
     Z = zeros(odegree, size(W, 2), size(W, 3), idegree, iclust, oclust);
     F = zeros(size(W, 1) / oclust, odegree, iclust, oclust);
+	printf('C--%s\n', mat2str(size(C)));
+	printf('Z--%s\n', mat2str(size(Z)));
+	printf('F--%s\n', mat2str(size(F)));
 
     for i = 1 : iclust
         for o = 1 : oclust
@@ -238,19 +241,32 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
             iidx = idx_input == i;
 
             Wtmp = W(oidx, :, :, iidx);
+            printf('W--%s\n', mat2str(size(W)));
+            printf('Wtmp--%s\n', mat2str(size(Wtmp)));
             [u, s, v] = svd(Wtmp(:, :));
+            printf('u--%s\n', mat2str(size(u)));
+            printf('s--%s\n', mat2str(size(s)));
+            printf('v--%s\n', mat2str(size(v)));
             F_ = u(:, 1:odegree) * s(1:odegree, 1:odegree);
+            printf('F_--%s\n', mat2str(size(F_)));
 
             Wtmptmp = F_ * v(:, 1:odegree)';
             F(:, :, i, o) = F_;
-            Wapprox_tmp = reshape(v(:, 1:odegree)', [odegree, size(Wtmp, 2), size(Wtmp, 3), size(Wtmp, 4)]);
 
+            Wapprox_tmp = reshape(v(:, 1:odegree)', [odegree, size(Wtmp, 2), size(Wtmp, 3), size(Wtmp, 4)]);
             Wapprox_tmp = permute(Wapprox_tmp, [4, 1, 2, 3]);
+
+            printf('Wapprox_tmp--%s\n', mat2str(size(Wapprox_tmp)));
             [u, s, v] = svd(Wapprox_tmp(:, :));
+            printf('u--%s\n', mat2str(size(u)));
+            printf('s--%s\n', mat2str(size(s)));
+            printf('v--%s\n', mat2str(size(v)));
             C_ = u(:, 1:idegree) * s(1:idegree, 1:idegree);
+            printf('C_--%s\n', mat2str(size(C_)));
             C(:, :, i, o) = C_;
             Z_ = v(:, 1:idegree);
-            Wtmptmptmp_ = C_ * Z_';
+            % Wtmptmptmp_ = C_ * Z_';
+            printf('Z_--%s\n', mat2str(size(Z_)));
             Z(:, :, :, :, i, o) = reshape(Z_, [odegree, size(W, 2), size(W, 3), idegree]);
         end
     end

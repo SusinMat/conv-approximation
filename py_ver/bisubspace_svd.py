@@ -213,6 +213,7 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
     print("Tramsform 3 : %f" % (approx_ops[2] / np.sum(approx_ops)))
     print("----------------")
 
+    # conseq = not conseq
     if not conseq:
         WW = np.reshape(W, (W_shape[0], np.prod(W_shape[1:4])), order="F")
         # print(WW.transpose())
@@ -221,16 +222,90 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
         # print("[" + ";".join([str(i + 1) for i in idx_output]) + "]")
         WW = W.transpose([3, 1, 2, 0])
         WW = np.reshape(WW, (WW.shape[0], np.prod(WW.shape[1:4])), order="F")
-        idx_input = litekmeans(WW.transpose(), iclust)
-        exit()
+        idx_input = np.asarray(litekmeans(WW.transpose(), iclust)[0])
+    else:
+        # untested
+        idx_input = np.zeros([iclust * int(iclust_sz)], dtype=np.int)
+        idx_output = np.zeros([oclust * int(oclust_sz)], dtype=np.int)
+        for i in range(iclust):
+            idx_input[i * int(iclust_sz) : (i + 1) * int(iclust_sz)] = i
+        for o in range(oclust):
+            idx_output[o * int(oclust_sz) : (o + 1) * int(oclust_sz)] = o
+
+    C = np.zeros([W.shape[3] // iclust, int(idegree), iclust, oclust])
+    Z = np.zeros([int(odegree), W.shape[1], W.shape[2], int(idegree), iclust, oclust])
+    F = np.zeros([W.shape[0] // oclust, int(odegree), iclust, oclust])
+
+    print("C--" + str(C.shape))
+    print("Z--" + str(Z.shape))
+    print("F--" + str(F.shape))
+    for i in range(iclust):
+        for o in range(oclust):
+            oidx = idx_output == o
+            iidx = idx_input == i
+            oidx_indices = np.nonzero(oidx)[0]
+            iidx_indices = np.nonzero(iidx)[0]
+
+            Wtmp = W[oidx_indices, :, :, :]
+            Wtmp = Wtmp[:, :, :, iidx_indices]
+            print("W--" + str(W.shape))
+            print("Wtmp--" + str(Wtmp.shape))
+            Wtmp_shape = np.asarray(Wtmp.shape)
+            Wtmp_ = np.reshape(Wtmp, (Wtmp_shape[0], np.prod(Wtmp_shape[1:4])), order="F")
+            (u, s, vt) = la.svd(Wtmp_, full_matrices=True)
+            v = vt.transpose()
+            s = np.diag(s)
+            s = np.concatenate((s, np.zeros([s.shape[0], v.shape[0] - s.shape[0]])), axis=1)
+            print("u--" + str(u.shape))
+            print("s--" + str(s.shape))
+            print("v--" + str(v.shape))
+            F_ = np.matmul(u[:, 0:int(odegree)], s[0:int(odegree), 0:int(odegree)])
+            print("F_--" + str(F_.shape))
+            Wtmptmp = np.matmul(F_, v[:, 0:int(odegree)].transpose())
+            F[:, :, i, o] = F_
+
+            Wapprox_tmp = np.reshape(v[:, 0:int(odegree)].transpose(), [int(odegree), Wtmp.shape[1], Wtmp.shape[2], Wtmp.shape[3]], order="F")
+            Wapprox_tmp = Wapprox_tmp.transpose([3, 0, 1, 2])
+            print("Wapprox_tmp--" + str(Wapprox_tmp.shape))
+            Wapprox_tmp_shape = np.asarray(Wapprox_tmp.shape)
+            Wapprox_tmp_ = np.reshape(Wapprox_tmp, (Wapprox_tmp_shape[0], np.prod(Wapprox_tmp_shape[1:4])), order="F")
+            (u, s, vt) = la.svd(Wapprox_tmp_, full_matrices=True)
+            v = vt.transpose()
+            s = np.diag(s)
+            s = np.concatenate((s, np.zeros([s.shape[0], v.shape[0] - s.shape[0]])), axis=1)
+            print("u--" + str(u.shape))
+            print("s--" + str(s.shape))
+            print("v--" + str(v.shape))
+            C_ = np.matmul(u[:, 0:int(idegree)], s[0:int(idegree), 0:int(idegree)])
+            print("C_--" + str(C_.shape))
+            C[:, :, i, o] = C_
+            Z_ = v[:, 0:int(idegree)]
+            print("Z_--" + str(Z_.shape))
+            # Wtmptmptmp_ = np.matmul(C_, Z_.transpose())
+            Z[:, :, :, :, i, o] = Z_.reshape([int(odegree), W.shape[1], W.shape[2], int(idegree)], order="F")
+
+    print("")
+    Wapprox = np.zeros(W.shape)
+    for i in range(iclust):
+        for o in range(oclust):
+            pass
+
+
 
     # Wapprox = W.transpose([0, 2, 3, 1])
+
+    print("norm(W) == %e" % (la.norm(W)))
+    print("norm(Wapprox) == %e" % (la.norm(Wapprox)))
+    L2_err = la.norm(W - Wapprox) / la.norm(W)
+    print("||W - Wapprox|| / ||W|| == " + str(L2_err))
+
     Wapprox = W
     return [Wapprox]
 
 if __name__ == "__main__":
     op = pickle.load(open("layer.pkl", "rb"))
     W = op.inputs[1].data
+
     # print("[%s];" % (" ".join([("%e" % i) for i in W.flatten().tolist()])))
     input_image = op.inputs[0]
     output_image = op.outputs[0]
