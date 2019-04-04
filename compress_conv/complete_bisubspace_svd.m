@@ -284,13 +284,17 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
             Z_ = permute(Z_, [4, 1, 2, 3]);
             Z_ = Z_(:, :)';
             ZC = Z_ * C_';
+            printf('ZC--%s\n', mat2str(size(ZC)));
 
             Wtmptmptmp = reshape(ZC, [odegree, size(W, 2), size(W, 3), iclust_sz]);
             Wtmptmptmp = Wtmptmptmp(:, :);
+            printf('Wtmptmptmp--%s\n', mat2str(size(Wtmptmptmp)));
             Wtmp = F_ * Wtmptmptmp;
 
 
             Wtmp = reshape(Wtmp, [oclust_sz, size(W, 2), size(W, 3), iclust_sz]);
+            printf('Wtmp-%s\n', mat2str(size(Wtmp)));
+            printf('Wapprox-%s\n', mat2str(size(Wapprox)));
             Wapprox(oidx, :, :, iidx) = Wtmp;
 
         end

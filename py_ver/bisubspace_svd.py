@@ -288,9 +288,29 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
     Wapprox = np.zeros(W.shape)
     for i in range(iclust):
         for o in range(oclust):
-            pass
+            oidx = idx_output == o
+            iidx = idx_input == i
 
+            C_ = C[:, :, i, o]
+            Z_ = Z[:, :, :, :, i, o]
+            F_ = F[:, :, i, o]
+            Z_ = Z_.transpose([3, 0, 1, 2])
+            Z_ = Z_.reshape([Z_.shape[0], Z_.shape[1] * Z_.shape[2] * Z_.shape[3]], order="F").transpose()
+            ZC = np.matmul(Z_, C_.transpose())
+            print("ZC--" + str(ZC.shape))
 
+            Wtmptmptmp = ZC.reshape([int(odegree), W.shape[1], W.shape[2], int(iclust_sz)], order="F")
+            Wtmptmptmp = Wtmptmptmp.reshape([Wtmptmptmp.shape[0], Wtmptmptmp.shape[1] * Wtmptmptmp.shape[2] * Wtmptmptmp.shape[3]], order="F")
+            print("Wtmptmptmp--" + str(Wtmptmptmp.shape))
+            Wtmp = np.matmul(F_, Wtmptmptmp)
+            Wtmp = Wtmp.reshape([int(oclust_sz), W.shape[1], W.shape[2], int(iclust_sz)], order="F")
+            print("Wtmp--" + str(Wtmp.shape))
+
+            oidx_indices = np.nonzero(oidx)[0]
+            iidx_indices = np.nonzero(iidx)[0]
+            for ii in range(len(iidx_indices)):
+                for oi in range(len(oidx_indices)):
+                    Wapprox[oidx_indices[oi], : , : , iidx_indices[ii]] = Wtmp[oi, :, :, ii]
 
     # Wapprox = W.transpose([0, 2, 3, 1])
 
