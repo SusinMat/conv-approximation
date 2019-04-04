@@ -26,8 +26,6 @@ def print_2d_array(array):
     print(array_string)
     return
 
-seed = 0
-
 def get_rand_int(n):
     global seed
     m = 100003
@@ -137,7 +135,7 @@ def litekmeans(X, k):
     last = 0
 
     minener = 1e20
-    outiters = 1
+    outiters = 30
     maxiters = 1000
 
     for j in range(outiters):
@@ -319,7 +317,8 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
     L2_err = la.norm(W - Wapprox) / la.norm(W)
     print("||W - Wapprox|| / ||W|| == " + str(L2_err))
 
-    Wapprox = W
+    # print("%e" % Wapprox[2, 2, 2, 2])
+
     return [Wapprox]
 
 if __name__ == "__main__":

@@ -309,7 +309,7 @@ def op_to_tf(op, input_value):
     return subgraph
 
 
-def accuracy_approximation(ops, tensors, op_name="Conv2D", index=0):
+def accuracy_approximation(ops, tensors, op_name="Conv2D", index=3):
     # Count how many tensors indexes are in use
     tensor_indexes = [tensor.index for tensor in tensors]
 
@@ -326,10 +326,11 @@ def accuracy_approximation(ops, tensors, op_name="Conv2D", index=0):
     # pickle.dump(op, open("layer.pkl", "wb"))
     # exit()
     ### Approximation starts here ###
-    [Wapprox, Wmono, colors, perm, num_weights] = approximate(op)
+    # [Wapprox, Wmono, colors, perm, num_weights] = approximate(op, strategy="bisubspace_svd")
+    Wapprox = approximate(op, strategy="bisubspace_svd")[0]
     op.inputs[1].data = Wapprox
-    num_colors = colors.shape[1]
-    num_expansions = op.outputs[0].shape[3] // num_colors
+    # num_colors = colors.shape[1]
+    # num_expansions = op.outputs[0].shape[3] // num_colors
 
     ops[i] = op
 

@@ -134,7 +134,7 @@ function [outlabel,outm] = litekmeans(X, k)
     last = 0;
 
     minener = 1e+20;
-    outiters=1;
+    outiters=30;
     maxiters=1000;
 
     for j=1:outiters
@@ -303,6 +303,7 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
     fprintf('norm(W(:)) = %f\n', norm(W(:)));
     fprintf('norm(Wapprox(:)) = %f\n', norm(Wapprox(:)));
     fprintf('||W - Wapprox|| / ||W|| = %f\n', norm(W(:) - Wapprox(:)) / norm(W(:)));
+    % printf('%e\n', Wapprox(3, 3, 3, 3));
 end % function bispace_svd
 
 

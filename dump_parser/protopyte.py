@@ -25,7 +25,7 @@ import xorapu
 
 from tf_op import Tensor, Op
 
-def approximate(op, num_colors=6, even=False, strategy="monochromatic"):
+def approximate(op, num_colors=6, even=False, strategy=""):
     input_image = op.inputs[0]
     output_image = op.outputs[0]
     in_size = input_image.shape[1]
