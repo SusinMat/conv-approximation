@@ -309,7 +309,7 @@ def op_to_tf(op, input_value):
     return subgraph
 
 
-def accuracy_approximation(ops, tensors, op_name="Conv2D", index=3):
+def accuracy_approximation(ops, tensors, op_name, index):
     # Count how many tensors indexes are in use
     tensor_indexes = [tensor.index for tensor in tensors]
 
@@ -322,6 +322,9 @@ def accuracy_approximation(ops, tensors, op_name="Conv2D", index=3):
             if count == index:
                 break
             count += 1
+    else:
+        print("Error: you requested op '" + op_name + "' of index " + str(index) + ", but there are only " + str(count) + " operations of this type.")
+        exit()
 
     # pickle.dump(op, open("layer.pkl", "wb"))
     # exit()
@@ -336,7 +339,7 @@ def accuracy_approximation(ops, tensors, op_name="Conv2D", index=3):
 
     return (ops, tensors)
 
-def computation_approximation(ops, tensors, op_name="Conv2D", index=0):
+def computation_approximation(ops, tensors, op_name, index):
     # Count how many tensors indexes are in use
     tensor_indexes = [tensor.index for tensor in tensors]
 
@@ -452,9 +455,13 @@ if __name__ == "__main__":
 
     if enable_approximation:
         if approximate_accuracy:
-            (ops, tensors) = accuracy_approximation(ops, tensors)
+            (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 10)
+            (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 13)
+            (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 16)
+            (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 22)
+            (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 34)
         else:
-            (ops, tensors) = computation_approximation(ops, tensors)
+            (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 0)
 
     # Determine from input tensors which one is the network's input
     empty_indexes_set = set([tensor.index for tensor in tensors if tensor.data is None])
