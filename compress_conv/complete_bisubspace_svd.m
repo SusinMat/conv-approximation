@@ -138,7 +138,7 @@ function [outlabel,outm] = litekmeans(X, k)
     maxiters=1000;
 
     for j=1:outiters
-        fprintf(2, '* Iter %d / %d\n', j, outiters);
+        % fprintf(2, '* Iter %d / %d\n', j, outiters);
         % s = RandStream('mt19937ar','Seed',j);
         rand('seed', 0);
         % aux=randperm(s, n);
@@ -206,16 +206,16 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
     fprintf('Transform 1 : %f\n', approx_ops(1) / sum(approx_ops));
     fprintf('Conv : %f\n', approx_ops(2) / sum(approx_ops));
     fprintf('Transform 3 : %f\n', approx_ops(3) / sum(approx_ops));
-    fprintf('----------------\n');
+    fprintf('\n----------------\n\n');
 
     % conseq = ~conseq
     if (~conseq)
         WW = W(:,:); % shape is [output_channels, everything_else]
-	% printf('%s\n', mat2str(WW'));
-	% printf('%s\n', mat2str(WW'));
+        % printf('%s\n', mat2str(WW'));
+        % printf('%s\n', mat2str(WW'));
         idx_output = litekmeans(WW', oclust);
-	printf('idx_output--%s\n', mat2str(size(idx_output)));
-	% printf('%s\n', mat2str(idx_output));
+        printf('idx_output--%s\n', mat2str(size(idx_output)));
+        % printf('%s\n', mat2str(idx_output));
         WW = permute(W, [4 2 3 1]);
         WW = WW(:, :);
         idx_input = litekmeans(WW', iclust);
@@ -228,6 +228,7 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
         end
     end
 
+    fprintf('\n----------------\n\n');
     C = zeros(size(W, 4) / iclust, idegree, iclust, oclust);
     Z = zeros(odegree, size(W, 2), size(W, 3), idegree, iclust, oclust);
     F = zeros(size(W, 1) / oclust, odegree, iclust, oclust);
@@ -243,6 +244,7 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
             Wtmp = W(oidx, :, :, iidx);
             printf('W--%s\n', mat2str(size(W)));
             printf('Wtmp--%s\n', mat2str(size(Wtmp)));
+
             [u, s, v] = svd(Wtmp(:, :));
             printf('u--%s\n', mat2str(size(u)));
             printf('s--%s\n', mat2str(size(s)));
@@ -255,8 +257,8 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
 
             Wapprox_tmp = reshape(v(:, 1:odegree)', [odegree, size(Wtmp, 2), size(Wtmp, 3), size(Wtmp, 4)]);
             Wapprox_tmp = permute(Wapprox_tmp, [4, 1, 2, 3]);
-
             printf('Wapprox_tmp--%s\n', mat2str(size(Wapprox_tmp)));
+
             [u, s, v] = svd(Wapprox_tmp(:, :));
             printf('u--%s\n', mat2str(size(u)));
             printf('s--%s\n', mat2str(size(s)));
@@ -271,7 +273,7 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
         end
     end
 
-    fprintf('\n');
+    fprintf('\n----------------\n\n');
     Wapprox = zeros(size(W));
     for i = 1 : iclust
         for o = 1 : oclust
@@ -296,7 +298,6 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
             printf('Wtmp-%s\n', mat2str(size(Wtmp)));
             printf('Wapprox-%s\n', mat2str(size(Wapprox)));
             Wapprox(oidx, :, :, iidx) = Wtmp;
-
         end
     end
 
@@ -325,7 +326,6 @@ W = R;
 fprintf('W--%s\n', mat2str(size(W)));
 
 WW = W(:,:);
-fprintf('WW--%s\n', mat2str(size(WW)));
 % printf('%s\n', mat2str(WW));
 
 iclust = 2; % number of input clusters

@@ -1,106 +1,179 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from numpy import linalg as la
+import sys
+
+seed = 0
+
+def nextpow2(x):
+    return np.ceil(np.log2(np.abs(x)))
+
+def print_2d_array(array):
+    print(array.shape)
+    array_string = "[ "
+    for i in range(array.shape[0]):
+        for j in range(array.shape[1]):
+            array_string += str(array[i, j]) + ", "
+        array_string = array_string[:-2]
+        array_string += "; "
+    array_string = array_string[:-2]
+    array_string += " ] "
+    print(array_string)
+    return
+
+def get_rand_int(n):
+    global seed
+    m = 100003
+    a = 1103515245
+    c = 12345
+    seed = (a * seed + c) % m
+    # print("seed after == " + str(seed))
+    r = seed % n
+    return r
+
+def random_permutation(n):
+    array = np.arange(n, dtype=np.int)
+    if n == 1:
+        return array
+    for i in range(n - 1, 0, -1):
+        # j = np.random.randint(0, i)
+        j = get_rand_int(i + 1)
+        # print("j == " + str(j))
+        aux = array[i]
+        array[i] = array[j]
+        array[j] = aux
+    return array
 
 def kernelizationbis(data, databis):
-    ker = []
-    kern = []
-
     L = data.shape[0]
     M = databis.shape[0]
-
-    norms = np.sum(data ** 2, axis=1).reshape(-1, 1) * np.ones((1, M))
-    normbis = np.sum(databis ** 2, axis=1).reshape(-1, 1) * np.ones((1, L))
-    ker = norms + normbis.transpose() - 2 * data * databis.transpose()
+    # print("data--" + str(data.shape))
+    # print("databis--" + str(databis.shape))
+    norms = np.sum(np.power(data, 2), 1, keepdims=True) * np.ones([1, M])
+    normsbis = np.sum(np.power(databis, 2), 1, keepdims=True) * np.ones([1, L])
+    # print("norms--" + str(norms.shape))
+    # print("normsbis--" + str(normsbis.shape))
+    ker = norms + normsbis.transpose() - (2.0 * np.dot(data, databis.transpose()))
+    # print("ker--" + str(ker.shape))
     return ker
 
-def constrained_assignment(X, C, K):
-    out = []
-    ener = []
+
+def constrained_assignment(X, C, K): # D?
+    # assign samples to their nearest centers, with the constraint that each center receives K samples
     w = kernelizationbis(X.transpose(), C.transpose())
-    N = w.shape[0] # number of samples
-    M = w.shape[1] # number of centers
+    K = int(K)
+    # print("w == " + str(w))
+    [N, M] = [w.shape[0], w.shape[1]]
 
-    maxvalue = np.max(w) + 1
-
-    ds = sort(w, axis=1)
-    I = argsort(w, axis=1)
-
+    # maxvalue = np.max(w[:]) + 1
+    ds = np.sort(w, 1)
+    I = np.argsort(w, 1)
+    # print("ds == " + str(ds))
+    # print("I == " + str(I))
     # out = I[:, 0, np.newaxis]
     out = I[:, 0]
-    
+    # print("out--" + str(out.shape))
+    # print(out)
     taille = []
-
     for m in range(M):
-        taille.append(len([i for i in range(out) if out[0] == m]))
+        found = np.where(out == m)[0]
+        # print(found)
+        taille.append(len(found))
+    # print("taille == " + str(taille))
+    nextclust = np.argmax(taille)
+    hmany = taille[nextclust]
+    # print("nextclust == " + str(nextclust))
+    # print("hmany == %d ; nextclust == %d" % (hmany, nextclust))
 
-    taille = np.asarray(taille)
-
-    hmany, nextclust = (np.max(taille), np.argmax(taille)[0]) # Note: nextclust should be an index, not a list
-
-    choices = np.ones((N, 1))
-
-    visited = [False for i in range(len(out))]
+    visited = np.zeros(M, dtype=np.int)
+    choices = np.zeros(N, dtype=np.int)
 
     while hmany > K:
-        # aux = [x for x in nextclust if x in out]
         aux = np.where(out == nextclust)
+        aux = np.asarray(aux, dtype=np.int)
+        aux = aux.flatten()
         slice_ = []
-        for a in aux:
-            slice_.append(ds[a, choices[a] + 1 - ds[a, choices[a]]])
+        for l in range(aux.shape[0]):
+            slice_.append(ds[aux[l], choices[aux[l]] + 1] - ds[aux[l], choices[aux[l]]])
         slice_ = np.asarray(slice_)
         tempo = np.argsort(-slice_)
 
+        # print("tempo[0:K] ==\n    " + str(tempo[0 : K]))
         saved = aux[tempo[0 : K]]
         out[saved] = nextclust
 
-        visited[nextclust] = True
-        for k in range(K + 1, tempo.size):
+        visited[nextclust] = 1
+        for k in range(K, len(tempo)):
             i = 1
-            while visited[I[aux[tempo[k]], i]]:
+            while visited[I[aux[tempo[k]], i]] != 0:
                 i += 1
             out[aux[tempo[k]]] = I[aux[tempo[k]], i]
             choices[aux[tempo[k]]] = i
-        for m in range(len(M)):
-            taille[m] = len(np.where(out == m))
-        hmany, nextclust = (np.max(taille), np.argmax(taille)[0]) # Note: nextclust should be an index, not a list
+        for m in range(M):
+            taille[m] = len(np.where(out == m)[0])
+        # print("taille == " + str(taille))
+        nextclust = np.argmax(taille)
+        hmany = taille[nextclust]
 
     ener = 0
-    for n in range(len(N)):
+    for n in range(N):
         ener += w[n, out[n]]
 
     return [out, ener]
 
+
 def litekmeans(X, k):
-    outlabel = []
-    outm = []
+    # X : d-by-n data matrix
+    # k : number of seeds
 
     n = X.shape[1]
     last = 0
 
-    minener = 1e+20
+    minener = 1e20
     outiters = 30
     maxiters = 1000
-    last = None
 
     for j in range(outiters):
-        print("Iter %d / %d\n" % (j, outiters))
-        aux = np.random.permutation(n)
-        m = X[:, aux[0 : k]]
-        (label, _) = constrained_assignment(X, m, n / k)
-        (u, label) = np.unique(label, return_index=True, return_inverse=True) # remove empty clusters
+        # print("* Iter %d / %d" % (j + 1, outiters), file=sys.stderr)
+        # np.random.seed(seed=0)
+        # aux = [i - 1 for i in aux]
+        # aux = np.array(aux)
+        aux = random_permutation(n)
+        # aux = np.random.permutation(n)
+        m = X[:, aux[:k]]
+        [label, _] = constrained_assignment(X, m, n / k)
+        assignment_distribution = np.zeros([k], dtype=np.int)
+        for assignment in label:
+            assignment_distribution[assignment] += 1
+        # print("assignment_distribution == " + str(assignment_distribution))
 
-        for iters in range(max(maxiters)):
-            if last != None and last not in label:
-                break
-            None
-            np.unique(label, )
-        
+        iters = 0
+        while np.any(label != last) and iters < maxiters:
+            [u, label] = np.unique(label, return_inverse=True)
+            k = len(u)
+            E = np.zeros([n, k])
+            for i in range(n):
+                E[i, label[i]] = 1
+            diag = np.diag(np.power(sum(E, 0).transpose(), -1), k=0)
+            if diag.shape != (k, k):
+                print("Error: diagonal matrix is not k-by-k. k == %d diag.shape == %s" % (k, str(diag.shape)))
+                exit(-1)
+            m = np.dot(X, np.dot(E, diag))
+            # print("m--" + str(m.shape))
+            last = label
+            [label, ener] = constrained_assignment(X, m, n / k)
+            # print(label)
+            assignment_distribution = np.zeros([k], dtype=np.int)
+            for assignment in label:
+                assignment_distribution[assignment] += 1
+            # print("assignment_distribution == " + str(assignment_distribution))
+            iters += 1
+
+        [_, label] = np.unique(label, return_inverse=True)
+
+        if ener < minener:
+            outlabel = label
+            outm = m
+            minener = ener
+
     return [outlabel, outm]
-
-if __name__ == "__main__":
-    data = (np.arange(4) + 1).reshape(2, 2)
-    print(str(data))
-    ker = kernelizationbis(data, data)
-    print(str(ker))

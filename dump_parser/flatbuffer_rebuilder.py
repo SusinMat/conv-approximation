@@ -460,6 +460,7 @@ if __name__ == "__main__":
             (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 16)
             (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 22)
             (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 34)
+            (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 37)
         else:
             (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 0)
 
