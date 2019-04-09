@@ -144,7 +144,7 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
 
     # print("%e" % Wapprox[2, 2, 2, 2])
 
-    return [Wapprox]
+    return [Wapprox, C, Z, F, idx_input, idx_output]
 
 if __name__ == "__main__":
     op = pickle.load(open("layer.pkl", "rb"))

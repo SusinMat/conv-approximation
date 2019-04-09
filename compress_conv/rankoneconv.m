@@ -30,7 +30,6 @@ end
 function [C, H, V, F, out]=rankonetens(X,niters)
 
     S=size(X);
-    printf('Size of X: %s\n', mat2str(S));
     %init
     tmp=permute(X,[1 2 3 4]);
     tmp=tmp(:,:);
@@ -45,18 +44,11 @@ function [C, H, V, F, out]=rankonetens(X,niters)
     tmp=tmp(:,:);
     F = mean(tmp,2);
 
-    printf('Size of C: %s\n', mat2str(size(C)));
-    printf('Size of H: %s\n', mat2str(size(H)));
-    printf('Size of V: %s\n', mat2str(size(V)));
-    printf('Size of F: %s\n', mat2str(size(F)));
-
     for n=1:niters
 
         %C
         tmp=permute(X,[1 2 3 4]);
-        printf('Size of tmp: %s\n', mat2str(size(tmp)));
         tmp=tmp(:,:);
-        printf('Size of tmp: %s\n', mat2str(size(tmp)));
         aux=tensorize(H,V,F);
         C = tmp * aux(:);
 
