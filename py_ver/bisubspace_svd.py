@@ -15,6 +15,8 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
     print("in_s == %d ; out_s == %d ;" % (in_s, out_s))
     W_shape = np.asarray(W.shape, dtype=np.int)
     print("  W--" + str(W.shape))
+    print("    " + str(W.shape[0]) + " filters")
+    print("    " + str(W.shape[3]) + " channels")
     oclust_sz = W_shape[0] / oclust
     iclust_sz = W_shape[3] / iclust
 
@@ -30,9 +32,9 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
     print("Input rank : %d" % (idegree))
     print("Output rank : %d" % (odegree))
     print("Gain : %f" % (orig_ops / np.sum(approx_ops)))
-    print("Tramsform 1 : %f" % (approx_ops[0] / np.sum(approx_ops)))
+    print("Transform 1 : %f" % (approx_ops[0] / np.sum(approx_ops)))
     print("Conv : %f" % (approx_ops[1] / np.sum(approx_ops)))
-    print("Tramsform 3 : %f" % (approx_ops[2] / np.sum(approx_ops)))
+    print("Transform 3 : %f" % (approx_ops[2] / np.sum(approx_ops)))
     print("\n----------------\n")
 
     # conseq = not conseq
@@ -89,7 +91,7 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
 
             Wapprox_tmp = np.reshape(v[:, 0:odegree].transpose(), [odegree, Wtmp.shape[1], Wtmp.shape[2], Wtmp.shape[3]], order="F")
             Wapprox_tmp = Wapprox_tmp.transpose([3, 0, 1, 2])
-            # print("Wapprox_tmp--" + str(Wapprox_tmp.shape))
+            print("Wapprox_tmp--" + str(Wapprox_tmp.shape))
             Wapprox_tmp_shape = np.asarray(Wapprox_tmp.shape)
             Wapprox_tmp_ = np.reshape(Wapprox_tmp, (Wapprox_tmp_shape[0], np.prod(Wapprox_tmp_shape[1:4])), order="F")
             (u, s, vt) = la.svd(Wapprox_tmp_, full_matrices=True)

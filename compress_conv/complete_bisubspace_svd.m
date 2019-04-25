@@ -286,7 +286,7 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
             Z_ = permute(Z_, [4, 1, 2, 3]);
             Z_ = Z_(:, :)';
             ZC = Z_ * C_';
-            printf('ZC--%s\n', mat2str(size(ZC)));
+            printf('ZC--%s == Z_--%s * C_''--%s\n', mat2str(size(ZC)), mat2str(size(Z_)), mat2str(size(C_')));
 
             Wtmptmptmp = reshape(ZC, [odegree, size(W, 2), size(W, 3), iclust_sz]);
             Wtmptmptmp = Wtmptmptmp(:, :);
