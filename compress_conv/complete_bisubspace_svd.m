@@ -295,8 +295,8 @@ function [Wapprox, C, Z, F, idx_input, idx_output] = bispace_svd(W, iclust, irat
 
 
             Wtmp = reshape(Wtmp, [oclust_sz, size(W, 2), size(W, 3), iclust_sz]);
-            printf('Wtmp-%s\n', mat2str(size(Wtmp)));
-            printf('Wapprox-%s\n', mat2str(size(Wapprox)));
+            printf('Wtmp--%s\n', mat2str(size(Wtmp)));
+            printf('Wapprox--%s\n', mat2str(size(Wapprox)));
             Wapprox(oidx, :, :, iidx) = Wtmp;
         end
     end

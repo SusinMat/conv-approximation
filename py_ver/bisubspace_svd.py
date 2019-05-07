@@ -77,6 +77,7 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
             # print("Wtmp--" + str(Wtmp.shape))
             Wtmp_shape = np.asarray(Wtmp.shape)
             Wtmp_ = np.reshape(Wtmp, (Wtmp_shape[0], np.prod(Wtmp_shape[1:4])), order="F")
+            print("Wtmp_--" + str(Wtmp_.shape))
             (u, s, vt) = la.svd(Wtmp_, full_matrices=True)
             v = vt.transpose()
             s = np.diag(s)
@@ -123,15 +124,18 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
             F_ = F[:, :, i, o]
             Z_ = Z_.transpose([3, 0, 1, 2])
             Z_ = Z_.reshape([Z_.shape[0], Z_.shape[1] * Z_.shape[2] * Z_.shape[3]], order="F").transpose()
+            print("Z_--" + str(Z_.shape))
             ZC = np.matmul(Z_, C_.transpose())
-            # print("ZC--" + str(ZC.shape))
+            print("ZC--" + str(ZC.shape))
 
             Wtmptmptmp = ZC.reshape([odegree, W.shape[1], W.shape[2], int(iclust_sz)], order="F")
             Wtmptmptmp = Wtmptmptmp.reshape([Wtmptmptmp.shape[0], Wtmptmptmp.shape[1] * Wtmptmptmp.shape[2] * Wtmptmptmp.shape[3]], order="F")
-            # print("Wtmptmptmp--" + str(Wtmptmptmp.shape))
+            print("F_--" + str(F_.shape))
+            print("Wtmptmptmp--" + str(Wtmptmptmp.shape))
             Wtmp = np.matmul(F_, Wtmptmptmp)
+            print("Wtmp--" + str(Wtmp.shape))
             Wtmp = Wtmp.reshape([int(oclust_sz), W.shape[1], W.shape[2], int(iclust_sz)], order="F")
-            # print("Wtmp--" + str(Wtmp.shape))
+            print("Wtmp--" + str(Wtmp.shape))
 
             for ii in range(len(iidx_indices)):
                 for oi in range(len(oidx_indices)):
@@ -163,7 +167,7 @@ if __name__ == "__main__":
     K = 10
     number_of_seeds = 2
 
-    print("W--" + str(W.shape))
+    # print("W--" + str(W.shape))
 
     W_shape = np.asarray(W.shape, dtype=np.int)
     WW = np.reshape(W, (W_shape[0], np.prod(W_shape[1:4])), order="F")
