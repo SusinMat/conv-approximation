@@ -463,7 +463,7 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
         tensor_indexes += C_split_indexes
         C_split = Op(name="Split2")
         C_split.options["axis"] = 3
-        C_split.options["split_size"] = new_C_weights.shape[0] // len(C_split_indexes)
+        C_split.options["split_size"] = len(C_split_indexes)
         C_split.options["fused_activation_function"] = "NONE"
         C_split.inputs = [C_presplit_tensor]
         C_split_tensors = []
@@ -473,6 +473,36 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
             C_split_tensors.append(C_split_tensor)
             C_split.outputs.append(C_split_tensors[-1])
         new_ops.append(C_split)
+
+        # TODO: 3x3 conv
+        Z_weights_index = [len(tensor_indexes) + i for i in range(len(C_split_tensors))]
+        tensor_indexes += Z_weights_index
+        Z_outputs_index = [len(tensor_indexes) + i for i in range(len(C_split_tensors))]
+        tensor_indexes += Z_outputs_index
+        Z_output_tensors = [None] * len(C_split_tensors)
+
+        for i in range(C.shape[2]):
+            for o in range(C.shape[3]):
+                split_tensor_relative_index = o * ic_count + i
+                split_tensor_index = C_split_indexes[split_tensor_relative_index]
+                new_Z_weights = Z[:, :, :, :, i, o]
+                Z_conv = Op(name="Conv2D")
+                Z_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"})
+                Z_conv.inputs.append(C_split_tensors[split_tensor_relative_index])
+
+                Z_weights_tensor = Tensor(index=Z_weights_index[split_tensor_relative_index], shape=new_Z_weights.shape, type_name=op.inputs[0].type_name)
+                Z_weights_tensor.data = new_Z_weights
+                Z_conv.inputs.append(Z_weights_tensor)
+
+
+                Z_output_tensor = Tensor(index=Z_outputs_index[split_tensor_relative_index], shape=[1, op.outputs[0].shape[1], op.outputs[0].shape[2], Z_weights_tensor.shape[0]], type_name=op.inputs[0].type_name)
+                Z_output_tensors[split_tensor_relative_index] = Z_output_tensor
+                print(Z_output_tensor.shape)
+                Z_conv.outputs = [Z_output_tensor]
+
+                new_ops.append(Z_conv)
+
+        # exit()
 
         # split 64ch into 2 32ch
         # perform 4 1x1 conv from 32ch to 12ch
