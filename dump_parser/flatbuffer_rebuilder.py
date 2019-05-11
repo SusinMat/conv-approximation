@@ -266,6 +266,19 @@ def op_to_tf(op, input_value):
         for tensor in result:
             print(tensor.shape)
 
+    elif op.name == "Split2":
+        num_or_size_splits_tensor = tf.constant_initializer(int(op.options["split_size"]), dtype=tf.int32)
+        result = tf.split(input_value, int(op.options["split_size"]), axis=op.options["axis"])
+        print(result)
+        subgraph.append(result)
+        activation_function = activation_function_to_tf(op.options["fused_activation_function"])
+        if activation_function is not None:
+            result = activation_function(result)
+            subgraph.append(result)
+        print("Split output(s):")
+        for tensor in result:
+            print(tensor.shape)
+
     elif op.name == "Add":
         result = tf.math.add(input_value[0], input_value[1])
         subgraph.append(result)
@@ -309,7 +322,7 @@ def op_to_tf(op, input_value):
     return subgraph
 
 
-def accuracy_approximation(ops, tensors, op_name, index):
+def accuracy_approximation(ops, tensors, op_name, index, strategy="bisubspace_svd"):
     # Count how many tensors indexes are in use
     tensor_indexes = [tensor.index for tensor in tensors]
 
@@ -330,7 +343,8 @@ def accuracy_approximation(ops, tensors, op_name, index):
     # exit()
     ### Approximation starts here ###
     # [Wapprox, Wmono, colors, perm, num_weights] = approximate(op, strategy="bisubspace_svd")
-    Wapprox = approximate(op, strategy="bisubspace_svd")[0]
+    Wapprox = approximate(op, strategy=strategy)[0]
+    ### Wapprox = np.random.uniform(size=op.inputs[1].shape, low=np.min(op.inputs[1].data), high=np.max(op.inputs[1].data))
     op.inputs[1].data = Wapprox
     # num_colors = colors.shape[1]
     # num_expansions = op.outputs[0].shape[3] // num_colors
@@ -339,68 +353,149 @@ def accuracy_approximation(ops, tensors, op_name, index):
 
     return (ops, tensors)
 
-def computation_approximation(ops, tensors, op_name, index):
+def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace_svd"):
     # Count how many tensors indexes are in use
     tensor_indexes = [tensor.index for tensor in tensors]
 
-    # Find layer to apply approximation to
     conv = None
+    # Find layer to apply approximation to
+    target_op_i = None
     count = 0
     for i in range(len(ops)):
         op = ops[i]
         if op.name == op_name:
             if count == index:
+                target_op_i = i
                 break
             count += 1
+    if strategy == "monochromatic":
+        [Wapprox, Wmono, colors, perm, num_weights] = approximate(op, strategy=strategy)
+        new_ops = []
+        num_colors = colors.shape[1]
+        # tensor that holds the weights to calculate the monochrome tensor
+        transformation_weights_index = [len(tensor_indexes) + i for i in range(1)]
+        tensor_indexes += transformation_weights_index
+        # tensor that holds the monochrome tensors, before they are split
+        monotensor_index = [len(tensor_indexes) + i for i in range(1)]
+        tensor_indexes += monotensor_index
 
-    [Wapprox, Wmono, colors, perm, num_weights] = approximate(op)
-    new_ops = []
-    num_colors = colors.shape[1]
-    # tensor that holds the weights to calculate the monochrome tensor
-    transformation_weights_index = [len(tensor_indexes) + i for i in range(1)]
-    tensor_indexes += transformation_weights_index
-    # tensor that holds the monochrome tensors, before they are split
-    monotensor_index = [len(tensor_indexes) + i for i in range(1)]
-    tensor_indexes += monotensor_index
+        new_conv = Op(name="Conv2D")
+        new_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"})
+        new_conv.inputs.append(op.inputs[0])
+        new_weights_tensor = Tensor(index=transformation_weights_index[0], type_name=op.inputs[0].type_name)
+        new_weights_tensor.data = colors.transpose().reshape(num_colors, 1, 1, colors.shape[0])
+        new_weights_tensor.shape = new_weights_tensor.data.shape
+        new_conv.inputs.append(new_weights_tensor)
+        new_mono_tensor = Tensor(index=monotensor_index[0], shape=[1, op.inputs[0].shape[1], op.inputs[0].shape[2], num_colors], type_name=op.inputs[0].type_name)
+        new_conv.outputs = [new_mono_tensor]
+        new_ops.append(new_conv)
 
-    new_conv = Op(name="Conv2D")
-    new_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"})
-    new_conv.inputs.append(op.inputs[0])
-    new_weights_tensor = Tensor(index=transformation_weights_index[0], type_name=op.inputs[0].type_name)
-    new_weights_tensor.data = colors.transpose().reshape(num_colors, 1, 1, colors.shape[0])
-    new_weights_tensor.shape = new_weights_tensor.data.shape
-    new_conv.inputs.append(new_weights_tensor)
-    new_mono_tensor = Tensor(index=monotensor_index[0], shape=[1, op.inputs[0].shape[1], op.inputs[0].shape[2], num_colors], type_name=op.inputs[0].type_name)
-    new_conv.outputs = [new_mono_tensor]
-    new_ops.append(new_conv)
+        expand_weights_tensor = [len(tensor_indexes) + i for i in range(1)]
+        tensor_indexes += expand_weights_tensor
+        expand_biases_tensor = [len(tensor_indexes) + i for i in range(1)]
+        tensor_indexes += expand_biases_tensor
 
-    expand_weights_tensor = [len(tensor_indexes) + i for i in range(1)]
-    tensor_indexes += expand_weights_tensor
-    expand_biases_tensor = [len(tensor_indexes) + i for i in range(1)]
-    tensor_indexes += expand_biases_tensor
+        new_conv = Op(name="DepthwiseConv2D")
+        depth_multiplier = op.outputs[0].shape[3] // num_colors
+        new_conv.options = fix_dictionary_enum({"padding":"SAME", "depth_multiplier":depth_multiplier, "stride_h":2, "stride_w":2, "fused_activation_function":"RELU6"})
+        new_conv.inputs.append(new_mono_tensor)
+        # weights
+        new_weights_tensor = Tensor(index=expand_weights_tensor[0], type_name=op.inputs[0].type_name)
+        new_weights_tensor.data = np.random.randn(depth_multiplier, op.inputs[1].shape[1], op.inputs[1].shape[2], num_colors).astype("float32")
+        new_weights_tensor.shape = new_weights_tensor.data.shape
+        new_conv.inputs.append(new_weights_tensor)
+        # biases
+        new_biases_tensor = Tensor(index=expand_biases_tensor[0], type_name=op.inputs[0].type_name)
+        new_biases_tensor.data = np.random.randn(num_colors * depth_multiplier).astype("float32")
+        new_biases_tensor.shape = new_biases_tensor.data.shape
+        new_conv.inputs.append(new_biases_tensor)
+        # output
+        new_conv.outputs.append(op.outputs[0])
+        new_ops.append(new_conv)
+        ops = ops[0 : target_op_i] + new_ops + ops[target_op_i + 1 : len(ops)]
 
-    new_conv = Op(name="DepthwiseConv2D")
-    depth_multiplier = op.outputs[0].shape[3] // num_colors
-    new_conv.options = fix_dictionary_enum({"padding":"SAME", "depth_multiplier":depth_multiplier, "stride_h":2, "stride_w":2, "fused_activation_function":"RELU6"})
-    new_conv.inputs.append(new_mono_tensor)
-    # weights
-    new_weights_tensor = Tensor(index=expand_weights_tensor[0], type_name=op.inputs[0].type_name)
-    new_weights_tensor.data = np.random.randn(depth_multiplier, op.inputs[1].shape[1], op.inputs[1].shape[2], num_colors).astype("float32")
-    new_weights_tensor.shape = new_weights_tensor.data.shape
-    new_conv.inputs.append(new_weights_tensor)
-    # biases
-    new_biases_tensor = Tensor(index=expand_biases_tensor[0], type_name=op.inputs[0].type_name)
-    new_biases_tensor.data = np.random.randn(num_colors * depth_multiplier).astype("float32")
-    new_biases_tensor.shape = new_biases_tensor.data.shape
-    new_conv.inputs.append(new_biases_tensor)
-    # output
-    new_conv.outputs.append(op.outputs[0])
-    new_ops.append(new_conv)
-    ops = ops[0 : i] + new_ops + ops[i + 1 : len(ops)]
+        tensors = [item for sublist in [op.inputs + op.outputs for op in ops] for item in sublist]
+        tensors.sort(key=lambda item: item.index)
+        tensors = remove_successive_duplicates(tensors)
+    elif strategy == "bisubspace_svd":
+        [Wapprox, C, Z, F, idx_input, idx_output] = approximate(op, strategy=strategy)
+        new_ops = []
 
-    tensors = [item for sublist in [op.inputs + op.outputs for op in ops] for item in sublist]
-    tensors.sort(key=lambda item: item.index)
-    tensors = remove_successive_duplicates(tensors)
+        iidx = []
+        oidx = []
+        ic_count = max(idx_input) + 1
+        oc_count = max(idx_output) + 1
+        for i in range(ic_count):
+            iidx.append(np.where(idx_input == i)[0].tolist())
+        for o in range(oc_count):
+            oidx.append(np.where(idx_output == o)[0].tolist())
+        # TODO: split and concat (see op_to_tf function in this file)
+        # TODO alternative: fill weight tensor with zeros -- DONE?
+
+        new_C_weights = np.zeros([C.shape[2] * C.shape[3] * C.shape[1], 1, 1, Wapprox.shape[3]])
+        for i in range(C.shape[2]):
+            for o in range(C.shape[3]):
+                C_ = C[:, :, i, o]
+                filter_range_beginning = o * C.shape[2] * C.shape[1] + i * C.shape[1]
+                f_range = range(filter_range_beginning, filter_range_beginning + C.shape[1])
+                ch_range = iidx[i]
+                for f in range(C_.shape[1]):
+                    for ch in range(C_.shape[0]):
+                        new_C_weights[f_range[f] , 0, 0, ch_range[ch]] = C_[ch, f]
+
+        C_conv = Op(name="Conv2D")
+        C_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"})
+        C_conv.inputs.append(op.inputs[0])
+        C_weights_index = [len(tensor_indexes) + i for i in range(1)]
+        tensor_indexes += C_weights_index
+        C_weights_tensor = Tensor(index=C_weights_index[0], shape=new_C_weights.shape, type_name=op.inputs[0].type_name)
+        C_weights_tensor.data = new_C_weights
+        C_conv.inputs.append(C_weights_tensor)
+
+        C_presplit_index = [len(tensor_indexes) + i for i in range(1)]
+        tensor_indexes += C_presplit_index
+        C_presplit_tensor = Tensor(index=C_presplit_index[0], shape=[1, op.inputs[0].shape[1], op.inputs[0].shape[2], new_C_weights.shape[0]], type_name=op.inputs[0].type_name)
+        C_conv.outputs = [C_presplit_tensor]
+        new_ops.append(C_conv)
+
+        # TODO: split -- DONE?
+        C_split_indexes = [len(tensor_indexes) + i for i in range(ic_count * oc_count)]
+        tensor_indexes += C_split_indexes
+        C_split = Op(name="Split2")
+        C_split.options["axis"] = 3
+        C_split.options["split_size"] = new_C_weights.shape[0] // len(C_split_indexes)
+        C_split.options["fused_activation_function"] = "NONE"
+        C_split.inputs = [C_presplit_tensor]
+        C_split_tensors = []
+        C_split_shape = [C_presplit_tensor.shape[0], C_presplit_tensor.shape[1], C_presplit_tensor.shape[2], C_split.options["split_size"]]
+        for c in C_split_indexes:
+            C_split_tensor = Tensor(index=c, shape=C_split_shape)
+            C_split_tensors.append(C_split_tensor)
+            C_split.outputs.append(C_split_tensors[-1])
+        new_ops.append(C_split)
+
+        # split 64ch into 2 32ch
+        # perform 4 1x1 conv from 32ch to 12ch
+        # perform 4 3x3 conv from 12ch to 19ch
+        # unclear part starts here: experimentation (or careful study) is required
+        # perform 4 1x1 conv from 19ch to 48ch
+        # accumulate (sum) 2 of the previous 48ch outputs to produce a single 48ch for each pair
+        # splice (combine) the 2 48ch outputs into a single 96ch output
+
+        # tensor of index 6 is missing data
+        # ops = ops[0 : i] + new_ops + ops[i + 1 : len(ops)]
+        # TODO: code from here until the end of this block is just a copy of the previous case
+        ops = ops[0 : target_op_i + 1] + new_ops + ops[target_op_i + 1 : len(ops)]
+
+        new_tensors = [item for sublist in [op.inputs + op.outputs for op in new_ops] for item in sublist]
+
+        tensors = [item for sublist in [op.inputs + op.outputs for op in ops] for item in sublist]
+        tensors.sort(key=lambda item: item.index)
+        tensors = remove_successive_duplicates(tensors)
+        empty_tensors = [item.index for sublist in [op.outputs for op in ops] for item in sublist if item.index == 33]
+    else:
+        print("Error: invalid strategy '%s'." % strategy)
+        exit(1)
 
     return (ops, tensors)
 
@@ -462,7 +557,8 @@ if __name__ == "__main__":
             # (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 34)
             # (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 37)
         else:
-            (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 0)
+            # (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 0, strategy="monochromatic")
+            (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 13, strategy="bisubspace_svd")
 
     # Determine from input tensors which one is the network's input
     empty_indexes_set = set([tensor.index for tensor in tensors if tensor.data is None])

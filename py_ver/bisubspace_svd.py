@@ -175,7 +175,7 @@ if __name__ == "__main__":
     # print(WW)
     print("||W|| = %f" % la.norm(W))
     seed = 0
-    bisubspace_svd_approx(W, in_s=in_size, out_s=out_size)
+    [Wapprox, C, Z, F, idx_input, idx_output] = bisubspace_svd_approx(W, in_s=in_size, out_s=out_size)
 
     # litekmeans(X, number_of_seeds)
     # constrained_assignment(X, C, K)
