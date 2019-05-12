@@ -429,6 +429,7 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
             iidx.append(np.where(idx_input == i)[0].tolist())
         for o in range(oc_count):
             oidx.append(np.where(idx_output == o)[0].tolist())
+
         # TODO: split and concat (see op_to_tf function in this file)
         # TODO alternative: fill weight tensor with zeros -- DONE?
 
@@ -474,7 +475,7 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
             C_split.outputs.append(C_split_tensors[-1])
         new_ops.append(C_split)
 
-        # TODO: 3x3 conv
+        # TODO: 3x3 conv -- DONE?
         Z_weights_index = [len(tensor_indexes) + i for i in range(len(C_split_tensors))]
         tensor_indexes += Z_weights_index
         Z_outputs_index = [len(tensor_indexes) + i for i in range(len(C_split_tensors))]
@@ -502,6 +503,33 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
 
                 new_ops.append(Z_conv)
 
+        # TODO: concat -- DONE?
+        F_concat = Op("Concatenation")
+        F_concat.options["fused_activation_function"] = "NONE"
+        F_concat.options["axis"] = 3
+        F_concat_index = [len(tensor_indexes) + i for i in range(1)]
+        tensor_indexes += F_concat_index
+        F_concat_tensor = Tensor(index=F_concat_index[0], shape=[Z_output_tensor.shape[0], Z_output_tensor.shape[1], Z_output_tensor.shape[2], Z_output_tensor.shape[3] * ic_count * oc_count], type_name=op.inputs[0].type_name)
+        F_concat.inputs = Z_output_tensors
+        F_concat.outputs = [F_concat_tensor]
+        new_ops.append(F_concat)
+
+        # TODO: 1x1 conv
+        new_F_weights = np.zeros([op.outputs[0].shape[3], 1, 1, F_concat_tensor.shape[3]])
+
+        F_conv = Op(name="Conv2D")
+        F_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":op.options["fused_activation_function"]})
+        F_conv.inputs.append(F_concat_tensor)
+        F_weights_index = [len(tensor_indexes) + i for i in range(1)]
+        tensor_indexes += F_weights_index
+        F_weights_tensor = Tensor(index=F_weights_index[0], shape=new_F_weights.shape, type_name=op.inputs[0].type_name)
+        F_weights_tensor.data = new_F_weights
+        F_conv.inputs.append(F_weights_tensor)
+
+        F_conv.outputs = op.outputs
+
+        new_ops.append(F_conv)
+
         # exit()
 
         # split 64ch into 2 32ch
@@ -512,10 +540,9 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
         # accumulate (sum) 2 of the previous 48ch outputs to produce a single 48ch for each pair
         # splice (combine) the 2 48ch outputs into a single 96ch output
 
-        # tensor of index 6 is missing data
-        # ops = ops[0 : i] + new_ops + ops[i + 1 : len(ops)]
+        ops = ops[0 : target_op_i] + new_ops + ops[target_op_i + 1 : len(ops)]
+
         # TODO: code from here until the end of this block is just a copy of the previous case
-        ops = ops[0 : target_op_i + 1] + new_ops + ops[target_op_i + 1 : len(ops)]
 
         new_tensors = [item for sublist in [op.inputs + op.outputs for op in new_ops] for item in sublist]
 
