@@ -516,6 +516,21 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
 
         # TODO: 1x1 conv
         new_F_weights = np.zeros([op.outputs[0].shape[3], 1, 1, F_concat_tensor.shape[3]])
+        print(new_F_weights.shape)
+
+        for i in range(ic_count):
+            for o in range(oc_count):
+                # truth is, for inception, we only need a few of the output channels, the rest can be zero
+                F_ = F[:, :, i, o]
+                print(F_.shape)
+                channel_range_beginning = o * F.shape[2] * F.shape[1] + i * F.shape[1]
+                ch_range = range(channel_range_beginning, channel_range_beginning + F.shape[1])
+                f_range = oidx[o]
+                print(f_range)
+                print(ch_range)
+                for f in range(F_.shape[0]):
+                    for ch in range(F_.shape[1]):
+                        new_F_weights[f_range[f] , 0, 0, ch_range[ch]] = F_[f, ch]
 
         F_conv = Op(name="Conv2D")
         F_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":op.options["fused_activation_function"]})
@@ -721,7 +736,7 @@ if __name__ == "__main__":
             #     out_tensor = sess.run(tensor, {input_placeholder : image})
             #     print(out_tensor.flatten().tolist()[0])
         if run_xorapu:
-            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=40, images_per_class=10)
+            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=80, images_per_class=20)
             print("Top 1 accuracy: %.02f%%" % (top1_accuracy))
             print("Top 5 accuracy: %.02f%%" % (top5_accuracy))
             if top1_accuracy > 92.00 and False:
