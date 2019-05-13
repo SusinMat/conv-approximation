@@ -514,13 +514,13 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
         F_concat.outputs = [F_concat_tensor]
         new_ops.append(F_concat)
 
-        # TODO: 1x1 conv
+        # TODO: 1x1 conv -- DONE?
         new_F_weights = np.zeros([op.outputs[0].shape[3], 1, 1, F_concat_tensor.shape[3]])
         print(new_F_weights.shape)
 
         for i in range(ic_count):
             for o in range(oc_count):
-                # truth is, for inception, we only need a few of the output channels, the rest can be zero
+                # truth is, for Inceptionv4, we only need a few of the output channels, the rest can be zero
                 F_ = F[:, :, i, o]
                 print(F_.shape)
                 channel_range_beginning = o * F.shape[2] * F.shape[1] + i * F.shape[1]
@@ -736,7 +736,7 @@ if __name__ == "__main__":
             #     out_tensor = sess.run(tensor, {input_placeholder : image})
             #     print(out_tensor.flatten().tolist()[0])
         if run_xorapu:
-            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=80, images_per_class=20)
+            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=100, images_per_class=2)
             print("Top 1 accuracy: %.02f%%" % (top1_accuracy))
             print("Top 5 accuracy: %.02f%%" % (top5_accuracy))
             if top1_accuracy > 92.00 and False:
