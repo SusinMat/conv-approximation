@@ -37,6 +37,11 @@ use_slim_depthwise         = 0
 use_slim_pool              = 1
 use_layers_fully_connected = 0
 
+def new_tensor_indexes(count, tensor_indexes):
+    new_indexes = [len(tensor_indexes) + i for i in range(count)]
+    tensor_indexes += new_indexes
+    return (new_indexes, tensor_indexes)
+
 def read_tensor_from_image_file(file_name, input_height=224, input_width=224, input_mean=-127, input_std=127):
     input_name = "file_reader"
     output_name = "normalized"
@@ -418,6 +423,7 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
         tensors.sort(key=lambda item: item.index)
         tensors = remove_successive_duplicates(tensors)
     elif strategy == "bisubspace_svd":
+        print("Original op options:" + str(op.options))
         [Wapprox, C, Z, F, idx_input, idx_output] = approximate(op, strategy=strategy)
         new_ops = []
 
@@ -447,21 +453,18 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
         C_conv = Op(name="Conv2D")
         C_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"})
         C_conv.inputs.append(op.inputs[0])
-        C_weights_index = [len(tensor_indexes) + i for i in range(1)]
-        tensor_indexes += C_weights_index
+        (C_weights_index, tensor_indexes) = new_tensor_indexes(1, tensor_indexes)
         C_weights_tensor = Tensor(index=C_weights_index[0], shape=new_C_weights.shape, type_name=op.inputs[0].type_name)
         C_weights_tensor.data = new_C_weights
         C_conv.inputs.append(C_weights_tensor)
 
-        C_presplit_index = [len(tensor_indexes) + i for i in range(1)]
-        tensor_indexes += C_presplit_index
+        (C_presplit_index, tensor_indexes) = new_tensor_indexes(1, tensor_indexes)
         C_presplit_tensor = Tensor(index=C_presplit_index[0], shape=[1, op.inputs[0].shape[1], op.inputs[0].shape[2], new_C_weights.shape[0]], type_name=op.inputs[0].type_name)
         C_conv.outputs = [C_presplit_tensor]
         new_ops.append(C_conv)
 
         # TODO: split -- DONE?
-        C_split_indexes = [len(tensor_indexes) + i for i in range(ic_count * oc_count)]
-        tensor_indexes += C_split_indexes
+        (C_split_indexes, tensor_indexes) = new_tensor_indexes(ic_count * oc_count, tensor_indexes)
         C_split = Op(name="Split2")
         C_split.options["axis"] = 3
         C_split.options["split_size"] = len(C_split_indexes)
@@ -476,10 +479,8 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
         new_ops.append(C_split)
 
         # TODO: 3x3 conv -- DONE?
-        Z_weights_index = [len(tensor_indexes) + i for i in range(len(C_split_tensors))]
-        tensor_indexes += Z_weights_index
-        Z_outputs_index = [len(tensor_indexes) + i for i in range(len(C_split_tensors))]
-        tensor_indexes += Z_outputs_index
+        (Z_weights_indexes, tensor_indexes) = new_tensor_indexes(len(C_split_tensors), tensor_indexes)
+        (Z_outputs_indexes, tensor_indexes) = new_tensor_indexes(len(C_split_tensors), tensor_indexes)
         Z_output_tensors = [None] * len(C_split_tensors)
 
         for i in range(C.shape[2]):
@@ -488,15 +489,15 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
                 split_tensor_index = C_split_indexes[split_tensor_relative_index]
                 new_Z_weights = Z[:, :, :, :, i, o]
                 Z_conv = Op(name="Conv2D")
-                Z_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"})
+                Z_conv.options = fix_dictionary_enum({"padding":op.options["padding"], "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"})
                 Z_conv.inputs.append(C_split_tensors[split_tensor_relative_index])
 
-                Z_weights_tensor = Tensor(index=Z_weights_index[split_tensor_relative_index], shape=new_Z_weights.shape, type_name=op.inputs[0].type_name)
+                Z_weights_tensor = Tensor(index=Z_weights_indexes[split_tensor_relative_index], shape=new_Z_weights.shape, type_name=op.inputs[0].type_name)
                 Z_weights_tensor.data = new_Z_weights
                 Z_conv.inputs.append(Z_weights_tensor)
 
 
-                Z_output_tensor = Tensor(index=Z_outputs_index[split_tensor_relative_index], shape=[1, op.outputs[0].shape[1], op.outputs[0].shape[2], Z_weights_tensor.shape[0]], type_name=op.inputs[0].type_name)
+                Z_output_tensor = Tensor(index=Z_outputs_indexes[split_tensor_relative_index], shape=[1, op.outputs[0].shape[1], op.outputs[0].shape[2], Z_weights_tensor.shape[0]], type_name=op.inputs[0].type_name)
                 Z_output_tensors[split_tensor_relative_index] = Z_output_tensor
                 print(Z_output_tensor.shape)
                 Z_conv.outputs = [Z_output_tensor]
@@ -507,8 +508,7 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
         F_concat = Op("Concatenation")
         F_concat.options["fused_activation_function"] = "NONE"
         F_concat.options["axis"] = 3
-        F_concat_index = [len(tensor_indexes) + i for i in range(1)]
-        tensor_indexes += F_concat_index
+        (F_concat_index, tensor_indexes) = new_tensor_indexes(1, tensor_indexes)
         F_concat_tensor = Tensor(index=F_concat_index[0], shape=[Z_output_tensor.shape[0], Z_output_tensor.shape[1], Z_output_tensor.shape[2], Z_output_tensor.shape[3] * ic_count * oc_count], type_name=op.inputs[0].type_name)
         F_concat.inputs = Z_output_tensors
         F_concat.outputs = [F_concat_tensor]
@@ -535,8 +535,7 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
         F_conv = Op(name="Conv2D")
         F_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":op.options["fused_activation_function"]})
         F_conv.inputs.append(F_concat_tensor)
-        F_weights_index = [len(tensor_indexes) + i for i in range(1)]
-        tensor_indexes += F_weights_index
+        (F_weights_index, tensor_indexes) = new_tensor_indexes(1, tensor_indexes)
         F_weights_tensor = Tensor(index=F_weights_index[0], shape=new_F_weights.shape, type_name=op.inputs[0].type_name)
         F_weights_tensor.data = new_F_weights
         F_conv.inputs.append(F_weights_tensor)
@@ -623,14 +622,18 @@ if __name__ == "__main__":
     if enable_approximation:
         if approximate_accuracy:
             # (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 10)
-            (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 13)
+            (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 15)
             # (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 16)
             # (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 22)
             # (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 34)
             # (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 37)
         else:
             # (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 0, strategy="monochromatic")
-            (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 13, strategy="bisubspace_svd")
+            (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 15, strategy="bisubspace_svd")
+            (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 25, strategy="bisubspace_svd")
+            (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 32, strategy="bisubspace_svd")
+            (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 44, strategy="bisubspace_svd")
+            (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 54, strategy="bisubspace_svd")
 
     # Determine from input tensors which one is the network's input
     empty_indexes_set = set([tensor.index for tensor in tensors if tensor.data is None])
