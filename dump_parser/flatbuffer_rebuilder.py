@@ -436,12 +436,11 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
         for o in range(oc_count):
             oidx.append(np.where(idx_output == o)[0].tolist())
 
-        # TODO: split and concat (see op_to_tf function in this file)
-        # TODO alternative: fill weight tensor with zeros -- DONE?
+        # alternative: fill weight tensor with zeros
 
         new_C_weights = np.zeros([C.shape[2] * C.shape[3] * C.shape[1], 1, 1, Wapprox.shape[3]])
-        for i in range(C.shape[2]):
-            for o in range(C.shape[3]):
+        for o in range(oc_count):
+            for i in range(ic_count):
                 C_ = C[:, :, i, o]
                 filter_range_beginning = o * C.shape[2] * C.shape[1] + i * C.shape[1]
                 f_range = range(filter_range_beginning, filter_range_beginning + C.shape[1])
@@ -463,7 +462,7 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
         C_conv.outputs = [C_presplit_tensor]
         new_ops.append(C_conv)
 
-        # TODO: split -- DONE?
+        # split
         (C_split_indexes, tensor_indexes) = new_tensor_indexes(ic_count * oc_count, tensor_indexes)
         C_split = Op(name="Split2")
         C_split.options["axis"] = 3
@@ -478,18 +477,18 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
             C_split.outputs.append(C_split_tensors[-1])
         new_ops.append(C_split)
 
-        # TODO: 3x3 conv -- DONE?
+        # 3x3 conv
         (Z_weights_indexes, tensor_indexes) = new_tensor_indexes(len(C_split_tensors), tensor_indexes)
         (Z_outputs_indexes, tensor_indexes) = new_tensor_indexes(len(C_split_tensors), tensor_indexes)
         Z_output_tensors = [None] * len(C_split_tensors)
 
-        for i in range(C.shape[2]):
-            for o in range(C.shape[3]):
+        for o in range(oc_count):
+            for i in range(ic_count):
                 split_tensor_relative_index = o * ic_count + i
                 split_tensor_index = C_split_indexes[split_tensor_relative_index]
                 new_Z_weights = Z[:, :, :, :, i, o]
                 Z_conv = Op(name="Conv2D")
-                Z_conv.options = fix_dictionary_enum({"padding":op.options["padding"], "stride_h":1, "stride_w":1, "fused_activation_function":"NONE"})
+                Z_conv.options = fix_dictionary_enum({"padding":op.options["padding"], "stride_h":op.options["stride_h"], "stride_w":op.options["stride_w"], "fused_activation_function":"NONE"})
                 Z_conv.inputs.append(C_split_tensors[split_tensor_relative_index])
 
                 Z_weights_tensor = Tensor(index=Z_weights_indexes[split_tensor_relative_index], shape=new_Z_weights.shape, type_name=op.inputs[0].type_name)
@@ -504,7 +503,7 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
 
                 new_ops.append(Z_conv)
 
-        # TODO: concat -- DONE?
+        # concat
         F_concat = Op("Concatenation")
         F_concat.options["fused_activation_function"] = "NONE"
         F_concat.options["axis"] = 3
@@ -514,12 +513,12 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
         F_concat.outputs = [F_concat_tensor]
         new_ops.append(F_concat)
 
-        # TODO: 1x1 conv -- DONE?
+        # 1x1 conv
         new_F_weights = np.zeros([op.outputs[0].shape[3], 1, 1, F_concat_tensor.shape[3]])
         print(new_F_weights.shape)
 
-        for i in range(ic_count):
-            for o in range(oc_count):
+        for o in range(oc_count):
+            for i in range(ic_count):
                 # truth is, for Inceptionv4, we only need a few of the output channels, the rest can be zero
                 F_ = F[:, :, i, o]
                 print(F_.shape)
@@ -530,7 +529,7 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
                 print(ch_range)
                 for f in range(F_.shape[0]):
                     for ch in range(F_.shape[1]):
-                        new_F_weights[f_range[f] , 0, 0, ch_range[ch]] = F_[f, ch]
+                        new_F_weights[f_range[f], 0, 0, ch_range[ch]] = F_[f, ch]
 
         F_conv = Op(name="Conv2D")
         F_conv.options = fix_dictionary_enum({"padding":"SAME", "stride_h":1, "stride_w":1, "fused_activation_function":op.options["fused_activation_function"]})
@@ -539,6 +538,7 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
         F_weights_tensor = Tensor(index=F_weights_index[0], shape=new_F_weights.shape, type_name=op.inputs[0].type_name)
         F_weights_tensor.data = new_F_weights
         F_conv.inputs.append(F_weights_tensor)
+        F_conv.inputs.append(op.inputs[2])
 
         F_conv.outputs = op.outputs
 
@@ -630,10 +630,10 @@ if __name__ == "__main__":
         else:
             # (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 0, strategy="monochromatic")
             (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 15, strategy="bisubspace_svd")
-            (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 25, strategy="bisubspace_svd")
-            (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 32, strategy="bisubspace_svd")
-            (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 44, strategy="bisubspace_svd")
-            (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 54, strategy="bisubspace_svd")
+            # (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 25, strategy="bisubspace_svd")
+            # (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 32, strategy="bisubspace_svd")
+            # (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 44, strategy="bisubspace_svd")
+            # (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 54, strategy="bisubspace_svd")
 
     # Determine from input tensors which one is the network's input
     empty_indexes_set = set([tensor.index for tensor in tensors if tensor.data is None])
