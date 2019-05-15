@@ -358,18 +358,19 @@ def accuracy_approximation(ops, tensors, op_name, index, strategy="bisubspace_sv
 
     return (ops, tensors)
 
-def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace_svd"):
+def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace_svd", offset=0):
     # Count how many tensors indexes are in use
     tensor_indexes = [tensor.index for tensor in tensors]
 
-    conv = None
+    new_offset = offset
+
     # Find layer to apply approximation to
     target_op_i = None
     count = 0
     for i in range(len(ops)):
         op = ops[i]
         if op.name == op_name:
-            if count == index:
+            if count == index + offset:
                 target_op_i = i
                 break
             count += 1
@@ -563,12 +564,13 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
         tensors = [item for sublist in [op.inputs + op.outputs for op in ops] for item in sublist]
         tensors.sort(key=lambda item: item.index)
         tensors = remove_successive_duplicates(tensors)
-        empty_tensors = [item.index for sublist in [op.outputs for op in ops] for item in sublist if item.index == 33]
+
+        new_offset += oc_count * ic_count + 1
     else:
         print("Error: invalid strategy '%s'." % strategy)
         exit(1)
 
-    return (ops, tensors)
+    return (ops, tensors, new_offset)
 
 
 if __name__ == "__main__":
@@ -621,19 +623,12 @@ if __name__ == "__main__":
 
     if enable_approximation:
         if approximate_accuracy:
-            # (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 10)
-            (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 15)
-            # (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 16)
-            # (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 22)
-            # (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 34)
-            # (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", 37)
+            for i in [15, 16, 22, 34, 37]:
+                (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", i)
         else:
-            # (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 0, strategy="monochromatic")
-            (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 15, strategy="bisubspace_svd")
-            # (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 25, strategy="bisubspace_svd")
-            # (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 32, strategy="bisubspace_svd")
-            # (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 44, strategy="bisubspace_svd")
-            # (ops, tensors) = computation_approximation(ops, tensors, "Conv2D", 54, strategy="bisubspace_svd")
+            new_offset = 0
+            for i in [15, 16, 22, 34, 37]:
+                (ops, tensors, new_offset) = computation_approximation(ops, tensors, "Conv2D", i, strategy="bisubspace_svd", offset=new_offset)
 
     # Determine from input tensors which one is the network's input
     empty_indexes_set = set([tensor.index for tensor in tensors if tensor.data is None])
