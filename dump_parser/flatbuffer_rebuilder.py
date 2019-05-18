@@ -621,13 +621,25 @@ if __name__ == "__main__":
     tensors.sort(key=lambda item: item.index)
     tensors = remove_successive_duplicates(tensors)
 
+    candidate_convs = []
+    conv_count = 0
+    for i in range(1, len(ops)):
+        if ops[i].name == "Conv2D":
+            conv_count += 1
+            if ops[i].inputs[1].shape[1] > 1 and ops[i].inputs[1].shape[2] > 1:
+                candidate_convs.append(conv_count)
+    print(", ".join([str(i) for i in candidate_convs]))
+    print("%d out of %d Conv2D ops (%.2f%%)" % (len(candidate_convs), conv_count, 100.0 * len(candidate_convs) / conv_count))
+
     if enable_approximation:
+        # target_op_indexes = [3, 6] # squeezenet
+        target_op_indexes = [16, 22, 34, 37, 39, 42, 114, 118] # inception_v4
         if approximate_accuracy:
-            for i in [15, 16, 22, 34, 37]:
+            for i in target_op_indexes:
                 (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", i)
         else:
             new_offset = 0
-            for i in [15, 16, 22, 34, 37]:
+            for i in target_op_indexes:
                 (ops, tensors, new_offset) = computation_approximation(ops, tensors, "Conv2D", i, strategy="bisubspace_svd", offset=new_offset)
 
     # Determine from input tensors which one is the network's input
@@ -734,7 +746,7 @@ if __name__ == "__main__":
             #     out_tensor = sess.run(tensor, {input_placeholder : image})
             #     print(out_tensor.flatten().tolist()[0])
         if run_xorapu:
-            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=100, images_per_class=2)
+            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=250, images_per_class=4)
             print("Top 1 accuracy: %.02f%%" % (top1_accuracy))
             print("Top 5 accuracy: %.02f%%" % (top5_accuracy))
             if top1_accuracy > 92.00 and False:
