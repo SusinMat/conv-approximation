@@ -627,13 +627,16 @@ if __name__ == "__main__":
         if ops[i].name == "Conv2D":
             conv_count += 1
             if ops[i].inputs[1].shape[1] > 1 and ops[i].inputs[1].shape[2] > 1:
+            # if ops[i].inputs[1].shape[1] > 1 and ops[i].inputs[1].shape[2] > 1 and ops[i].options["stride_h"] == 1 and ops[i].options["stride_h"] == 1:
                 candidate_convs.append(conv_count)
     print(", ".join([str(i) for i in candidate_convs]))
     print("%d out of %d Conv2D ops (%.2f%%)" % (len(candidate_convs), conv_count, 100.0 * len(candidate_convs) / conv_count))
 
     if enable_approximation:
         # target_op_indexes = [3, 6] # squeezenet
-        target_op_indexes = [16, 22, 34, 37, 39, 42, 114, 118] # inception_v4
+        target_op_indexes = [28, 56, 70, 84] # inception_v2_resnet
+        # target_op_indexes = [16, 29, 71, 75] # inception_v3
+        # target_op_indexes = [16, 22, 34, 37] # inception_v4
         if approximate_accuracy:
             for i in target_op_indexes:
                 (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", i)

@@ -35,7 +35,7 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
     print("Transform 1 : %f" % (approx_ops[0] / np.sum(approx_ops)))
     print("Conv : %f" % (approx_ops[1] / np.sum(approx_ops)))
     print("Transform 3 : %f" % (approx_ops[2] / np.sum(approx_ops)))
-    print("\n----------------\n")
+    # print("\n----------------\n")
 
     # conseq = not conseq
     if not conseq:
@@ -56,7 +56,7 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
         for o in range(oclust):
             idx_output[o * int(oclust_sz) : (o + 1) * int(oclust_sz)] = o
 
-    print("\n----------------\n")
+    # print("\n----------------\n")
     C = np.zeros([W.shape[3] // iclust, idegree, iclust, oclust])
     Z = np.zeros([odegree, W.shape[1], W.shape[2], idegree, iclust, oclust])
     F = np.zeros([W.shape[0] // oclust, odegree, iclust, oclust])
@@ -77,7 +77,7 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
             # print("Wtmp--" + str(Wtmp.shape))
             Wtmp_shape = np.asarray(Wtmp.shape)
             Wtmp_ = np.reshape(Wtmp, (Wtmp_shape[0], np.prod(Wtmp_shape[1:4])), order="F")
-            print("Wtmp_--" + str(Wtmp_.shape))
+            # print("Wtmp_--" + str(Wtmp_.shape))
             (u, s, vt) = la.svd(Wtmp_, full_matrices=True)
             v = vt.transpose()
             s = np.diag(s)
@@ -92,7 +92,7 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
 
             Wapprox_tmp = np.reshape(v[:, 0:odegree].transpose(), [odegree, Wtmp.shape[1], Wtmp.shape[2], Wtmp.shape[3]], order="F")
             Wapprox_tmp = Wapprox_tmp.transpose([3, 0, 1, 2])
-            print("Wapprox_tmp--" + str(Wapprox_tmp.shape))
+            # print("Wapprox_tmp--" + str(Wapprox_tmp.shape))
             Wapprox_tmp_shape = np.asarray(Wapprox_tmp.shape)
             Wapprox_tmp_ = np.reshape(Wapprox_tmp, (Wapprox_tmp_shape[0], np.prod(Wapprox_tmp_shape[1:4])), order="F")
             (u, s, vt) = la.svd(Wapprox_tmp_, full_matrices=True)
@@ -110,7 +110,7 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
             Wtmptmptmp_ = np.matmul(C_, Z_.transpose())
             Z[:, :, :, :, i, o] = Z_.reshape([odegree, W.shape[1], W.shape[2], idegree], order="F")
 
-    print("\n----------------\n")
+    # print("\n----------------\n")
     Wapprox = np.zeros(W.shape)
     for i in range(iclust):
         for o in range(oclust):
@@ -124,18 +124,18 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
             F_ = F[:, :, i, o]
             Z_ = Z_.transpose([3, 0, 1, 2])
             Z_ = Z_.reshape([Z_.shape[0], Z_.shape[1] * Z_.shape[2] * Z_.shape[3]], order="F").transpose()
-            print("Z_--" + str(Z_.shape))
+            # print("Z_--" + str(Z_.shape))
             ZC = np.matmul(Z_, C_.transpose())
-            print("ZC--" + str(ZC.shape))
+            # print("ZC--" + str(ZC.shape))
 
             Wtmptmptmp = ZC.reshape([odegree, W.shape[1], W.shape[2], int(iclust_sz)], order="F")
             Wtmptmptmp = Wtmptmptmp.reshape([Wtmptmptmp.shape[0], Wtmptmptmp.shape[1] * Wtmptmptmp.shape[2] * Wtmptmptmp.shape[3]], order="F")
-            print("F_--" + str(F_.shape))
-            print("Wtmptmptmp--" + str(Wtmptmptmp.shape))
+            # print("F_--" + str(F_.shape))
+            # print("Wtmptmptmp--" + str(Wtmptmptmp.shape))
             Wtmp = np.matmul(F_, Wtmptmptmp)
-            print("Wtmp--" + str(Wtmp.shape))
+            # print("Wtmp--" + str(Wtmp.shape))
             Wtmp = Wtmp.reshape([int(oclust_sz), W.shape[1], W.shape[2], int(iclust_sz)], order="F")
-            print("Wtmp--" + str(Wtmp.shape))
+            # print("Wtmp--" + str(Wtmp.shape))
 
             for ii in range(len(iidx_indices)):
                 for oi in range(len(oidx_indices)):
@@ -147,6 +147,7 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
     print("norm(Wapprox) == %e" % (la.norm(Wapprox)))
     L2_err = la.norm(W - Wapprox) / la.norm(W)
     print("||W - Wapprox|| / ||W|| == " + str(L2_err))
+    print("\n----------------\n")
 
     # print("%e" % Wapprox[2, 2, 2, 2])
 
