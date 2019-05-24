@@ -285,12 +285,20 @@ def op_to_tf(op, input_value):
             print(tensor.shape)
 
     elif op.name == "Add":
-        result = tf.math.add(input_value[0], input_value[1])
-        subgraph.append(result)
+        if isinstance(input_value, list):
+            result = tf.math.add(input_value[0], input_value[1])
+            subgraph.append(result)
+        else:
+            result = tf.math.add(input_value, op.inputs[1].data)
+            subgraph.append(result)
         activation_function = activation_function_to_tf(op.options["fused_activation_function"])
         if activation_function is not None:
             result = activation_function(result)
             subgraph.append(result)
+
+    elif op.name == "Mul":
+        result = tf.multiply(input_value, op.inputs[1].data)
+        subgraph.append(result)
 
     elif op.name == "FullyConnected":
         if use_layers_fully_connected:
@@ -316,6 +324,22 @@ def op_to_tf(op, input_value):
             if activation_function is not None:
                 result = activation_function(result)
                 subgraph.append(result)
+
+    elif op.name == "Pad" or op.name == "MirrorPad":
+        mode = "ERROR"
+        if op.name == "Pad":
+            mode = "CONSTANT"
+        paddings = tf.constant(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
+        result = tf.pad(input_value, paddings, mode)
+        subgraph.append(result)
+
+    elif op.name == "Mean":
+        # TODO: broken
+        print(op.inputs[1].data)
+        weights = tf.constant(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
+        result = tf.metrics.mean(input_value, weights)
+        subgraph.append(result)
+        exit()
 
     else:
         print("Unsupported operation: " + op.name)
@@ -633,9 +657,10 @@ if __name__ == "__main__":
     print("%d out of %d Conv2D ops (%.2f%%)" % (len(candidate_convs), conv_count, 100.0 * len(candidate_convs) / conv_count))
 
     if enable_approximation:
+        target_op_indexes = []
         # target_op_indexes = [3, 6] # squeezenet
         # target_op_indexes = [28, 56, 70, 84] # inception_v2_resnet
-        target_op_indexes = [16, 29, 71, 75] # inception_v3
+        # target_op_indexes = [16, 29, 71, 75] # inception_v3
         # target_op_indexes = [16, 22, 34, 37] # inception_v4
         if approximate_accuracy:
             for i in target_op_indexes:
