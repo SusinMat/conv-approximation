@@ -3,7 +3,7 @@
 import numpy as np
 import sys
 
-seed = None
+global_seed = None
 
 def nextpow2(x):
     return np.ceil(np.log2(np.abs(x)))
@@ -22,13 +22,12 @@ def print_2d_array(array):
     return
 
 def get_rand_int(n):
-    global seed
+    global global_seed
     m = 100003
     a = 1103515245
     c = 12345
-    seed = (a * seed + c) % m
-    # print("seed after == " + str(seed))
-    r = seed % n
+    global_seed = (a * global_seed + c) % m
+    r = global_seed % n
     return r
 
 def random_permutation(n):
@@ -125,6 +124,7 @@ def constrained_assignment(X, C, K): # D?
 def litekmeans(X, k, seed=0):
     # X : d-by-n data matrix
     # k : number of seeds
+    global global_seed
 
     n = X.shape[1]
     last = 0
@@ -133,9 +133,11 @@ def litekmeans(X, k, seed=0):
     outiters = 30
     maxiters = 1000
 
+    np.random.seed(seed=seed)
+    global_seed = seed
+
     for j in range(outiters):
         # print("* Iter %d / %d" % (j + 1, outiters), file=sys.stderr)
-        np.random.seed(seed=seed)
         # aux = [i - 1 for i in aux]
         # aux = np.array(aux)
         # aux = random_permutation(n)

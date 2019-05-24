@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from litekmeans_module import litekmeans, seed
+from litekmeans_module import litekmeans, global_seed
 import numpy as np
 from numpy import linalg as la
 import pickle
@@ -47,7 +47,6 @@ def bisubspace_svd_approx(W, iclust=4, iratio=0.4, oclust=4, oratio=0.4, conseq=
         WW = W.transpose([3, 1, 2, 0])
         WW = np.reshape(WW, (WW.shape[0], np.prod(WW.shape[1:4])), order="F")
         idx_input = np.asarray(litekmeans(WW.transpose(), iclust, seed=seed)[0])
-        print(idx_input)
     else:
         # untested
         idx_input = np.zeros([iclust * int(iclust_sz)], dtype=np.int)
@@ -176,7 +175,7 @@ if __name__ == "__main__":
     # print("WW--" + str(WW.shape))
     # print(WW)
     print("||W|| = %f" % la.norm(W))
-    seed = 0
+    global_seed = 0
     [Wapprox, C, Z, F, idx_input, idx_output] = bisubspace_svd_approx(W, in_s=in_size, out_s=out_size)
 
     # litekmeans(X, number_of_seeds)

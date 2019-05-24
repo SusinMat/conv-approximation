@@ -25,7 +25,7 @@ import xorapu
 
 from tf_op import Tensor, Op
 
-global_seed = 10
+global_seed = 0
 
 def approximate(op, num_colors=6, even=False, strategy="", seed=None):
     global global_seed
