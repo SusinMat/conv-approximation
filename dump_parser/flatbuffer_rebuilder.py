@@ -634,8 +634,8 @@ if __name__ == "__main__":
 
     if enable_approximation:
         # target_op_indexes = [3, 6] # squeezenet
-        target_op_indexes = [28, 56, 70, 84] # inception_v2_resnet
-        # target_op_indexes = [16, 29, 71, 75] # inception_v3
+        # target_op_indexes = [28, 56, 70, 84] # inception_v2_resnet
+        target_op_indexes = [16, 29, 71, 75] # inception_v3
         # target_op_indexes = [16, 22, 34, 37] # inception_v4
         if approximate_accuracy:
             for i in target_op_indexes:

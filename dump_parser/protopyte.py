@@ -25,7 +25,14 @@ import xorapu
 
 from tf_op import Tensor, Op
 
-def approximate(op, num_colors=6, even=False, strategy=""):
+global_seed = 10
+
+def approximate(op, num_colors=6, even=False, strategy="", seed=None):
+    global global_seed
+    if seed is None:
+        seed = global_seed
+    else:
+        global_seed = seed
     input_image = op.inputs[0]
     output_image = op.outputs[0]
     in_size = input_image.shape[1]
@@ -35,7 +42,7 @@ def approximate(op, num_colors=6, even=False, strategy=""):
     if strategy == "monochromatic":
         return monochromatic_approx(W, num_colors=num_colors, even=even)
     elif strategy == "bisubspace_svd":
-        return bisubspace_svd_approx(W, in_s=in_size, out_s=out_size)
+        return bisubspace_svd_approx(W, in_s=in_size, out_s=out_size, seed=seed)
     else:
         print("Error: approximation strategy '" + strategy + "' not supported.")
         exit(1)

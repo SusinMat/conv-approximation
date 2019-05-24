@@ -3,7 +3,7 @@
 import numpy as np
 import sys
 
-seed = 0
+seed = None
 
 def nextpow2(x):
     return np.ceil(np.log2(np.abs(x)))
@@ -122,7 +122,7 @@ def constrained_assignment(X, C, K): # D?
     return [out, ener]
 
 
-def litekmeans(X, k):
+def litekmeans(X, k, seed=0):
     # X : d-by-n data matrix
     # k : number of seeds
 
@@ -135,11 +135,11 @@ def litekmeans(X, k):
 
     for j in range(outiters):
         # print("* Iter %d / %d" % (j + 1, outiters), file=sys.stderr)
-        # np.random.seed(seed=0)
+        np.random.seed(seed=seed)
         # aux = [i - 1 for i in aux]
         # aux = np.array(aux)
-        aux = random_permutation(n)
-        # aux = np.random.permutation(n)
+        # aux = random_permutation(n)
+        aux = np.random.permutation(n)
         m = X[:, aux[:k]]
         [label, _] = constrained_assignment(X, m, n / k)
         assignment_distribution = np.zeros([k], dtype=np.int)

@@ -8,7 +8,7 @@ from scipy.cluster.vq import kmeans2, whiten
 import sys
 import tf_op
 
-def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=False, in_s=0, out_s=0):
+def bisubspace_svd_approx(W, iclust=4, iratio=0.4, oclust=4, oratio=0.4, conseq=False, in_s=0, out_s=0, seed=None):
     W.shape # (filters, height, width, channels)
     # W = W.transpose([0, 3, 1, 2]) # [filters, channels, height, width]
     print("iclust = %d, iratio = %f, oclust = %d, oratio = %f, conseq = %d" % (iclust, iratio, oclust, oratio, conseq))
@@ -41,12 +41,13 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
     if not conseq:
         WW = np.reshape(W, (W_shape[0], np.prod(W_shape[1:4])), order="F")
         # print(WW.transpose())
-        idx_output = np.asarray(litekmeans(WW.transpose(), oclust)[0])
+        idx_output = np.asarray(litekmeans(WW.transpose(), oclust, seed=seed)[0])
         # print("idx_output--" + str(idx_output.shape))
         # print("[" + ";".join([str(i + 1) for i in idx_output]) + "]")
         WW = W.transpose([3, 1, 2, 0])
         WW = np.reshape(WW, (WW.shape[0], np.prod(WW.shape[1:4])), order="F")
-        idx_input = np.asarray(litekmeans(WW.transpose(), iclust)[0])
+        idx_input = np.asarray(litekmeans(WW.transpose(), iclust, seed=seed)[0])
+        print(idx_input)
     else:
         # untested
         idx_input = np.zeros([iclust * int(iclust_sz)], dtype=np.int)
