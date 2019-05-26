@@ -334,12 +334,10 @@ def op_to_tf(op, input_value):
         subgraph.append(result)
 
     elif op.name == "Mean":
-        # TODO: broken
-        print(op.inputs[1].data)
-        weights = tf.constant(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
-        result = tf.metrics.mean(input_value, weights)
+        axis = tf.constant(op.inputs[1].data, dtype=type_name_to_tf(op.inputs[1].type_name))
+        keep_dims = bool(op.options["keep_dims"])
+        result = tf.reduce_mean(input_value, axis, keepdims=keep_dims)
         subgraph.append(result)
-        exit()
 
     else:
         print("Unsupported operation: " + op.name)
