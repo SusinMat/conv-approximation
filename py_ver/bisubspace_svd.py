@@ -8,7 +8,7 @@ from scipy.cluster.vq import kmeans2, whiten
 import sys
 import tf_op
 
-def bisubspace_svd_approx(W, iclust=4, iratio=0.4, oclust=4, oratio=0.4, conseq=False, in_s=0, out_s=0, seed=None):
+def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=False, in_s=0, out_s=0, seed=None):
     W.shape # (filters, height, width, channels)
     # W = W.transpose([0, 3, 1, 2]) # [filters, channels, height, width]
     print("iclust = %d, iratio = %f, oclust = %d, oratio = %f, conseq = %d" % (iclust, iratio, oclust, oratio, conseq))

@@ -36,6 +36,7 @@ use_layers_conv            = 0
 use_slim_depthwise         = 0
 use_slim_pool              = 1
 use_layers_fully_connected = 0
+use_dragunov               = 1
 
 def new_tensor_indexes(count, tensor_indexes):
     new_indexes = [len(tensor_indexes) + i for i in range(count)]
@@ -339,6 +340,12 @@ def op_to_tf(op, input_value):
         result = tf.reduce_mean(input_value, axis, keepdims=keep_dims)
         subgraph.append(result)
 
+    elif op.name == "Dragunov":
+        (stride_h, stride_w, padding, out_s) = (op.options["stride_h"], op.options["stride_w"], op.options["padding"], op.options["out_s"])
+        result = tf.user_ops.dragunov(input_value, op.inputs[1].data, op.inputs[2].data, op.inputs[3].data, stride_h, stride_w, padding, out_s)
+        subgraph.append(result)
+        print("Dragunov output:", result.shape)
+
     else:
         print("Unsupported operation: " + op.name)
         exit(1)
@@ -449,6 +456,35 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
         print("Original op options:" + str(op.options))
         [Wapprox, C, Z, F, idx_input, idx_output] = approximate(op, strategy=strategy)
         new_ops = []
+        if use_dragunov:
+            # TODO: once the Dragunov standalone op is working, delete the old method of adding new ops
+            out_size = op.outputs[0].shape[1]
+            new_dragunov = Op(name="Dragunov")
+            new_dragunov.options = fix_dictionary_enum({"stride_h":1, "stride_w":1, "padding":1, "out_s":out_size})
+            new_dragunov.outputs.append(op.outputs[0])
+            new_dragunov.inputs.append(op.inputs[0])
+            (C_index, tensor_indexes) = new_tensor_indexes(1, tensor_indexes)
+            (Z_index, tensor_indexes) = new_tensor_indexes(1, tensor_indexes)
+            (F_index, tensor_indexes) = new_tensor_indexes(1, tensor_indexes)
+            C_tensor = Tensor(index=C_index[0], shape=C.shape, type_name=op.inputs[0].type_name)
+            Z_tensor = Tensor(index=Z_index[0], shape=Z.shape, type_name=op.inputs[0].type_name)
+            F_tensor = Tensor(index=F_index[0], shape=F.shape, type_name=op.inputs[0].type_name)
+            C_tensor.data = C
+            Z_tensor.data = Z
+            F_tensor.data = F
+            new_dragunov.inputs.append(C_tensor)
+            new_dragunov.inputs.append(Z_tensor)
+            new_dragunov.inputs.append(F_tensor)
+            new_ops.append(new_dragunov)
+            # tf.user_ops.dragunov(input, filter_c, filter_z, filter_f, stride_h, stride_w, padding, out_s)
+            ops = ops[0 : target_op_i] + new_ops + ops[target_op_i + 1 : len(ops)]
+            new_tensors = [item for sublist in [op.inputs + op.outputs for op in new_ops] for item in sublist]
+            tensors = [item for sublist in [op.inputs + op.outputs for op in ops] for item in sublist]
+            tensors.sort(key=lambda item: item.index)
+            tensors = remove_successive_duplicates(tensors)
+            new_offset += 0
+            return (ops, tensors, new_offset)
+        # end of TODO
 
         iidx = []
         oidx = []
@@ -658,8 +694,9 @@ if __name__ == "__main__":
         target_op_indexes = []
         # target_op_indexes = [3, 6] # squeezenet
         # target_op_indexes = [28, 56, 70, 84] # inception_v2_resnet
-        # target_op_indexes = [16, 29, 71, 75] # inception_v3
+        target_op_indexes = [16, 29, 71, 75] # inception_v3
         # target_op_indexes = [16, 22, 34, 37] # inception_v4
+        target_op_indexes = [16] # test Dragunov
         if approximate_accuracy:
             for i in target_op_indexes:
                 (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", i)
@@ -772,7 +809,7 @@ if __name__ == "__main__":
             #     out_tensor = sess.run(tensor, {input_placeholder : image})
             #     print(out_tensor.flatten().tolist()[0])
         if run_xorapu:
-            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=250, images_per_class=4)
+            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=25, images_per_class=4)
             print("Top 1 accuracy: %.02f%%" % (top1_accuracy))
             print("Top 5 accuracy: %.02f%%" % (top5_accuracy))
             if top1_accuracy > 92.00 and False:
