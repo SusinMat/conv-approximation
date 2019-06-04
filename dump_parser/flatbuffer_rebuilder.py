@@ -103,6 +103,17 @@ def activation_function_to_tf(func_name):
         print("Unsupported type: " + func_name)
         exit(1)
 
+def padding_type_to_int(padding):
+    if padding == "UNKNOWN":
+        return 0
+    elif padding == "SAME":
+        return 1
+    elif padding == "VALID":
+        return 2
+    else:
+        print("Unsupported padding: %s" % (padding))
+        exit(1)
+
 def tensor_has_no_data(tensor):
     if tensor.data is None:
         return True
@@ -341,8 +352,8 @@ def op_to_tf(op, input_value):
         subgraph.append(result)
 
     elif op.name == "Dragunov":
-        (stride_h, stride_w, padding, out_s) = (op.options["stride_h"], op.options["stride_w"], op.options["padding"], op.options["out_s"])
-        result = tf.user_ops.dragunov(input_value, op.inputs[1].data, op.inputs[2].data, op.inputs[3].data, stride_h, stride_w, padding, out_s)
+        (stride_h, stride_w, padding) = (op.options["stride_h"], op.options["stride_w"], op.options["padding"])
+        result = tf.user_ops.dragunov(input_value, op.inputs[1].data, op.inputs[2].data, op.inputs[3].data, stride_h, stride_w, padding)
         subgraph.append(result)
         print("Dragunov output:", result.shape)
 
@@ -460,7 +471,8 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
             # TODO: once the Dragunov standalone op is working, delete the old method of adding new ops
             out_size = op.outputs[0].shape[1]
             new_dragunov = Op(name="Dragunov")
-            new_dragunov.options = fix_dictionary_enum({"stride_h":1, "stride_w":1, "padding":1, "out_s":out_size})
+            padding = padding_type_to_int(op.options["padding"])
+            new_dragunov.options = fix_dictionary_enum({"stride_h":1, "stride_w":1, "padding":padding})
             new_dragunov.outputs.append(op.outputs[0])
             new_dragunov.inputs.append(op.inputs[0])
             (C_index, tensor_indexes) = new_tensor_indexes(1, tensor_indexes)
@@ -476,7 +488,7 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
             new_dragunov.inputs.append(Z_tensor)
             new_dragunov.inputs.append(F_tensor)
             new_ops.append(new_dragunov)
-            # tf.user_ops.dragunov(input, filter_c, filter_z, filter_f, stride_h, stride_w, padding, out_s)
+            # tf.user_ops.dragunov(input, filter_c, filter_z, filter_f, stride_h, stride_w, padding)
             ops = ops[0 : target_op_i] + new_ops + ops[target_op_i + 1 : len(ops)]
             new_tensors = [item for sublist in [op.inputs + op.outputs for op in new_ops] for item in sublist]
             tensors = [item for sublist in [op.inputs + op.outputs for op in ops] for item in sublist]
