@@ -789,9 +789,13 @@ if __name__ == "__main__":
         tf.global_variables_initializer().run(session=sess)
         # tf.tables_initializer().run(session=sess)
 
-        # tensorflow 1.11
-        # save flatbuffer
-        converter = tf.contrib.lite.TocoConverter.from_session(sess, [input_placeholder], [last_node])
+        # Save flatbuffer
+        # tensorflow 1.11:
+        # converter = tf.contrib.lite.TocoConverter
+        # tensorflow 1.12:
+        converter = tf.contrib.lite.TFLiteConverter
+        converter = converter.from_session(sess, [input_placeholder], [last_node])
+        converter.allow_custom_ops = True
 
         quantize = False
         if quantize:
