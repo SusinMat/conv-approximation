@@ -353,7 +353,7 @@ def op_to_tf(op, input_value):
 
     elif op.name == "Dragunov":
         (stride_h, stride_w, padding) = (op.options["stride_h"], op.options["stride_w"], op.options["padding"])
-        result = tf.user_ops.dragunov(input_value, op.inputs[1].data, op.inputs[2].data, op.inputs[3].data, stride_h, stride_w, padding)
+        result = tf.user_ops.dragunov(input_value, op.inputs[1].data, op.inputs[2].data, op.inputs[3].data, stride_h=stride_h, stride_w=stride_w, padding=padding)
         subgraph.append(result)
         print("Dragunov output:", result.shape)
 
@@ -472,7 +472,9 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
             out_size = op.outputs[0].shape[1]
             new_dragunov = Op(name="Dragunov")
             padding = padding_type_to_int(op.options["padding"])
-            new_dragunov.options = fix_dictionary_enum({"stride_h":1, "stride_w":1, "padding":padding})
+            stride_h = op.options["stride_h"]
+            stride_w = op.options["stride_w"]
+            new_dragunov.options = fix_dictionary_enum({"stride_h":stride_h, "stride_w":stride_w, "padding":padding})
             new_dragunov.outputs.append(op.outputs[0])
             new_dragunov.inputs.append(op.inputs[0])
             (C_index, tensor_indexes) = new_tensor_indexes(1, tensor_indexes)
@@ -709,6 +711,7 @@ if __name__ == "__main__":
         target_op_indexes = [16, 29, 71, 75] # inception_v3
         # target_op_indexes = [16, 22, 34, 37] # inception_v4
         target_op_indexes = [16] # test Dragunov
+        target_op_indexes = [71] # test Dragunov
         if approximate_accuracy:
             for i in target_op_indexes:
                 (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", i)
