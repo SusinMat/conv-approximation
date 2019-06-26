@@ -28,9 +28,17 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
     approx_ops = iclust * oclust * np.asarray([in_s * in_s * iclust_sz * idegree,
                                                out_s * out_s * idegree * odegree * W_shape[1] * W_shape[2],
                                                out_s * out_s * odegree * oclust_sz])
+
+    C = np.zeros([W.shape[3] // iclust, idegree, iclust, oclust])
+    Z = np.zeros([odegree, W.shape[1], W.shape[2], idegree, iclust, oclust])
+    F = np.zeros([W.shape[0] // oclust, odegree, iclust, oclust])
+
+    compression_ratio = (np.prod(W_shape)) / (np.prod(np.asarray(C.shape)) + np.prod(np.asarray(Z.shape)) + np.prod(np.asarray(F.shape)))
+
     # print("approx_ops == " + str(approx_ops))
     print("Input rank : %d" % (idegree))
     print("Output rank : %d" % (odegree))
+    print("Compression ratio : %f" % (compression_ratio))
     print("Gain : %f" % (orig_ops / np.sum(approx_ops)))
     print("Transform 1 : %f" % (approx_ops[0] / np.sum(approx_ops)))
     print("Conv : %f" % (approx_ops[1] / np.sum(approx_ops)))
@@ -57,9 +65,7 @@ def bisubspace_svd_approx(W, iclust=2, iratio=0.4, oclust=2, oratio=0.4, conseq=
             idx_output[o * int(oclust_sz) : (o + 1) * int(oclust_sz)] = o
 
     # print("\n----------------\n")
-    C = np.zeros([W.shape[3] // iclust, idegree, iclust, oclust])
-    Z = np.zeros([odegree, W.shape[1], W.shape[2], idegree, iclust, oclust])
-    F = np.zeros([W.shape[0] // oclust, odegree, iclust, oclust])
+
 
     print("C--" + str(C.shape))
     print("Z--" + str(Z.shape))

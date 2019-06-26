@@ -43,6 +43,13 @@ def new_tensor_indexes(count, tensor_indexes):
     tensor_indexes += new_indexes
     return (new_indexes, tensor_indexes)
 
+def cluster_mapping_to_index_mapping(idx):
+        new_idx = []
+        c_count = max(idx) + 1
+        for i in range(c_count):
+            new_idx.append(np.where(idx == i)[0].tolist())
+        return new_idx
+
 def read_tensor_from_image_file(file_name, input_height=224, input_width=224, input_mean=-127, input_std=127):
     input_name = "file_reader"
     output_name = "normalized"
@@ -353,7 +360,7 @@ def op_to_tf(op, input_value):
 
     elif op.name == "Dragunov":
         (stride_h, stride_w, padding) = (op.options["stride_h"], op.options["stride_w"], op.options["padding"])
-        result = tf.user_ops.dragunov(input_value, op.inputs[1].data, op.inputs[2].data, op.inputs[3].data, stride_h=stride_h, stride_w=stride_w, padding=padding)
+        result = tf.user_ops.dragunov(input_value, op.inputs[1].data, op.inputs[2].data, op.inputs[3].data, op.inputs[4].data, op.inputs[5].data, stride_h=stride_h, stride_w=stride_w, padding=padding)
         subgraph.append(result)
         print("Dragunov output:", result.shape)
 
@@ -489,8 +496,20 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
             new_dragunov.inputs.append(C_tensor)
             new_dragunov.inputs.append(Z_tensor)
             new_dragunov.inputs.append(F_tensor)
+
+            iidx = np.asarray(cluster_mapping_to_index_mapping(idx_input))
+            oidx = np.asarray(cluster_mapping_to_index_mapping(idx_output))
+            (iidx_index, tensor_indexes) = new_tensor_indexes(1, tensor_indexes)
+            (oidx_index, tensor_indexes) = new_tensor_indexes(1, tensor_indexes)
+            iidx_tensor = Tensor(index=iidx_index[0], shape=iidx.shape, type_name="INT32")
+            oidx_tensor = Tensor(index=oidx_index[0], shape=oidx.shape, type_name="INT32")
+            iidx_tensor.data = iidx
+            oidx_tensor.data = oidx
+            new_dragunov.inputs.append(iidx_tensor)
+            new_dragunov.inputs.append(oidx_tensor)
+
             new_ops.append(new_dragunov)
-            # tf.user_ops.dragunov(input, filter_c, filter_z, filter_f, stride_h, stride_w, padding)
+            # tf.user_ops.dragunov(input, filter_c, filter_z, filter_f, iidx, oidx, ...)
             ops = ops[0 : target_op_i] + new_ops + ops[target_op_i + 1 : len(ops)]
             new_tensors = [item for sublist in [op.inputs + op.outputs for op in new_ops] for item in sublist]
             tensors = [item for sublist in [op.inputs + op.outputs for op in ops] for item in sublist]
@@ -500,14 +519,10 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
             return (ops, tensors, new_offset)
         # end of TODO
 
-        iidx = []
-        oidx = []
+        iidx = cluster_mapping_to_index_mapping(idx_input)
+        oidx = cluster_mapping_to_index_mapping(idx_output)
         ic_count = max(idx_input) + 1
         oc_count = max(idx_output) + 1
-        for i in range(ic_count):
-            iidx.append(np.where(idx_input == i)[0].tolist())
-        for o in range(oc_count):
-            oidx.append(np.where(idx_output == o)[0].tolist())
 
         # alternative: fill weight tensor with zeros
 
@@ -711,7 +726,7 @@ if __name__ == "__main__":
         target_op_indexes = [16, 29, 71, 75] # inception_v3
         # target_op_indexes = [16, 22, 34, 37] # inception_v4
         target_op_indexes = [16] # test Dragunov
-        target_op_indexes = [71] # test Dragunov
+         #target_op_indexes = [71] # test Dragunov
         if approximate_accuracy:
             for i in target_op_indexes:
                 (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", i)
