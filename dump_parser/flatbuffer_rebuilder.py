@@ -110,6 +110,17 @@ def activation_function_to_tf(func_name):
         print("Unsupported type: " + func_name)
         exit(1)
 
+def activation_function_to_int(func_name):
+    if func_name == "NONE":
+        return 0
+    elif func_name == "RELU":
+        return 1
+    elif func_name == "RELU6":
+        return 3
+    else:
+        print("Unsupported type: " + func_name)
+        exit(1)
+
 def padding_type_to_int(padding):
     if padding == "UNKNOWN":
         return 0
@@ -359,8 +370,8 @@ def op_to_tf(op, input_value):
         subgraph.append(result)
 
     elif op.name == "Dragunov":
-        (stride_h, stride_w, padding) = (op.options["stride_h"], op.options["stride_w"], op.options["padding"])
-        result = tf.user_ops.dragunov(input_value, op.inputs[1].data, op.inputs[2].data, op.inputs[3].data, op.inputs[4].data, op.inputs[5].data, stride_h=stride_h, stride_w=stride_w, padding=padding)
+        (stride_h, stride_w, padding, fused_activation_function) = (op.options["stride_h"], op.options["stride_w"], op.options["padding"], activation_function_to_int(op.options["fused_activation_function"]))
+        result = tf.user_ops.dragunov(input_value, op.inputs[1].data, op.inputs[2].data, op.inputs[3].data, op.inputs[4].data, op.inputs[5].data, op.inputs[6].data, stride_h=stride_h, stride_w=stride_w, padding=padding, fused_activation_function=fused_activation_function)
         subgraph.append(result)
         print("Dragunov output:", result.shape)
 
@@ -481,7 +492,8 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
             padding = padding_type_to_int(op.options["padding"])
             stride_h = op.options["stride_h"]
             stride_w = op.options["stride_w"]
-            new_dragunov.options = fix_dictionary_enum({"stride_h":stride_h, "stride_w":stride_w, "padding":padding})
+            fused_activation_function = op.options["fused_activation_function"]
+            new_dragunov.options = fix_dictionary_enum({"stride_h":stride_h, "stride_w":stride_w, "padding":padding, "fused_activation_function":fused_activation_function})
             new_dragunov.outputs.append(op.outputs[0])
             new_dragunov.inputs.append(op.inputs[0])
             (C_index, tensor_indexes) = new_tensor_indexes(1, tensor_indexes)
@@ -507,6 +519,8 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
             oidx_tensor.data = oidx
             new_dragunov.inputs.append(iidx_tensor)
             new_dragunov.inputs.append(oidx_tensor)
+
+            new_dragunov.inputs.append(op.inputs[2]) # the bias tensor
 
             new_ops.append(new_dragunov)
             # tf.user_ops.dragunov(input, filter_c, filter_z, filter_f, iidx, oidx, ...)
