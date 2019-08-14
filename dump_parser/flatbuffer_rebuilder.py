@@ -422,12 +422,17 @@ def computation_approximation(ops, tensors, op_name, index, strategy="bisubspace
 
     new_offset = offset
 
+    if op_name == "Conv2D":
+        eqv_op_name = ["Conv2D", "Dragunov"]
+    else:
+        eqv_op_name = [op_name]
+
     # Find layer to apply approximation to
     target_op_i = None
     count = 0
     for i in range(len(ops)):
         op = ops[i]
-        if op.name == op_name:
+        if op.name in eqv_op_name:
             if count == index + offset:
                 target_op_i = i
                 break
@@ -727,12 +732,11 @@ if __name__ == "__main__":
 
     candidate_convs = []
     conv_count = 0
-    for i in range(1, len(ops)):
+    for i in range(0, len(ops)):
         if ops[i].name == "Conv2D":
-            conv_count += 1
             if ops[i].inputs[1].shape[1] > 1 and ops[i].inputs[1].shape[2] > 1:
-            # if ops[i].inputs[1].shape[1] > 1 and ops[i].inputs[1].shape[2] > 1 and ops[i].options["stride_h"] == 1 and ops[i].options["stride_h"] == 1:
                 candidate_convs.append(conv_count)
+            conv_count += 1
     print(", ".join([str(i) for i in candidate_convs]))
     print("%d out of %d Conv2D ops (%.2f%%)" % (len(candidate_convs), conv_count, 100.0 * len(candidate_convs) / conv_count))
 
@@ -741,9 +745,8 @@ if __name__ == "__main__":
         # target_op_indexes = [3, 6] # squeezenet
         # target_op_indexes = [28, 56, 70, 84] # inception_v2_resnet
         target_op_indexes = [16, 29, 71, 75] # inception_v3
+        target_op_indexes = [1, 2, 4, 7, 9, 10, 14, 16, 17, 21, 23, 24, 26, 28, 29, 71, 75, 81, 90] # inception_v3 all
         # target_op_indexes = [16, 22, 34, 37] # inception_v4
-        target_op_indexes = [16] # test Dragunov
-         #target_op_indexes = [71] # test Dragunov
         if approximate_accuracy:
             for i in target_op_indexes:
                 (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", i)
