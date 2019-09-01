@@ -98,6 +98,7 @@ def monochromatic_approx(W, num_colors=6, even=False):
 
     Wmono = S.reshape(W.shape[0], W.shape[2], W.shape[3]) # [filters, height, width]
     # print("Wmono--%s" % (str(Wmono.shape)))
+    print("even == %d" % (even))
     print("perm == %s" % (str(perm)))
     # print("sorted(perm) == %s" % (str(sorted(perm))))
     colors = colors.transpose()

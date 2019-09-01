@@ -406,7 +406,7 @@ def accuracy_approximation(ops, tensors, op_name, index, strategy="bisubspace_sv
     # exit()
     ### Approximation starts here ###
     # [Wapprox, Wmono, colors, perm, num_weights] = approximate(op, strategy="bisubspace_svd")
-    Wapprox = approximate(op, strategy=strategy)[0]
+    Wapprox = approximate(op, strategy=strategy, num_colors=8 ,even=False)[0]
     ### Wapprox = np.random.uniform(size=op.inputs[1].shape, low=np.min(op.inputs[1].data), high=np.max(op.inputs[1].data))
     op.inputs[1].data = Wapprox
     # num_colors = colors.shape[1]
@@ -689,17 +689,22 @@ if __name__ == "__main__":
     parser.add_argument("--computational", "-c", action="store_true", help="if set, the reconstructed model will serve for estimating computational cost rather than accuracy")
     parser.add_argument("--disable_approximation", "-d", action="store_true", help="if set, no approximation will be applied to the model")
     parser.add_argument("--use_custom_implementation", "-u", action="store_true", help="if set, custom implementations for approximate ops will be used")
+    parser.add_argument("--layers", "-l", help="the list of conv layers, comma-separated, to apply the approximation to")
 
     args = parser.parse_args()
 
     model_path = args.model
     image_path = args.image
     run_xorapu = args.xorapu
+    layers = args.layers
     approximate_accuracy = not args.computational
     enable_approximation = not args.disable_approximation
     use_custom_implementation = args.use_custom_implementation
     if use_custom_implementation:
         approximate_accuracy = False
+
+    if layers != None:
+        layers = [int(conv_index.strip()) for conv_index in layers.split(",")]
 
     input_mode = (image_path != None)
 
@@ -742,14 +747,20 @@ if __name__ == "__main__":
 
     if enable_approximation:
         target_op_indexes = []
+        target_op_indexes = [0] # monochromatic
         # target_op_indexes = [3, 6] # squeezenet
         # target_op_indexes = [28, 56, 70, 84] # inception_v2_resnet
         target_op_indexes = [16, 29, 71, 75] # inception_v3
-        target_op_indexes = [1, 2, 4, 7, 9, 10, 14, 16, 17, 21, 23, 24, 26, 28, 29, 71, 75, 81, 90] # inception_v3 all
         # target_op_indexes = [16, 22, 34, 37] # inception_v4
+        target_op_indexes = [1, 2, 4, 7, 9, 10, 14, 16, 17, 21, 23, 24, 26, 28, 29, 71, 75, 81, 90] # inception_v3 all
+        target_op_indexes = [1, 2, 3, 5, 9, 10, 13, 15, 16, 20, 22, 23, 27, 29, 30, 34, 36, 37, 39, 41, 42, 114, 118] # inception_v4 all
+        target_op_indexes = [3, 6, 9, 13, 16, 19, 22, 26, 29, 32, 35, 38, 41, 44, 47, 50, 53, 56, 59, 62, 65, 68, 71, 74, 77, 80, 83, 86, 89, 92, 96, 99, 102] # resnet_v2 all
+        target_op_indexes = [1, 2, 4, 7, 9, 10, 14, 16, 17, 21, 23, 24, 28, 30, 31, 35, 37, 38, 42, 44, 45, 49, 51, 52, 56, 58, 59, 63, 65, 66, 70, 72, 73, 77, 79, 80, 82, 84, 85, 187] # inception_resnet_v2 all
+        target_op_indexes = [3, 6, 9, 12, 15, 18, 21, 24] # squeezenet all
+
         if approximate_accuracy:
             for i in target_op_indexes:
-                (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", i)
+                (ops, tensors) = accuracy_approximation(ops, tensors, "Conv2D", i, strategy="monochromatic")
         else:
             new_offset = 0
             for i in target_op_indexes:
@@ -863,7 +874,7 @@ if __name__ == "__main__":
             #     out_tensor = sess.run(tensor, {input_placeholder : image})
             #     print(out_tensor.flatten().tolist()[0])
         if run_xorapu:
-            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=25, images_per_class=4)
+            (top1_accuracy, top5_accuracy) = xorapu.test_model(reconstructed_model.name, None, None, classes_to_test=400, images_per_class=10)
             print("Top 1 accuracy: %.02f%%" % (top1_accuracy))
             print("Top 5 accuracy: %.02f%%" % (top5_accuracy))
             if top1_accuracy > 92.00 and False:

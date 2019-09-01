@@ -124,16 +124,17 @@ def constrained_assignment(X, C, K): # D?
 def litekmeans(X, k, seed=0):
     # X : d-by-n data matrix
     # k : number of seeds
+    seed = np.random.randint(10000000)
     global global_seed
 
     n = X.shape[1]
     last = 0
 
     minener = 1e20
-    outiters = 30
-    maxiters = 1000
+    outiters = 300
+    maxiters = 10000
 
-    np.random.seed(seed=seed)
+    # np.random.seed(seed=seed)
     global_seed = seed
 
     for j in range(outiters):

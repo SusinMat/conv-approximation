@@ -208,6 +208,8 @@ if __name__ == "__main__":
 
     # Done preparing environment
 
+    print("Running xorapu with images from %s and engine from %s" % (image_directory, beeswax_directory))
+
     (top1_accuracy, top5_accuracy) = test_model(model_path, image_directory, beeswax_directory)
 
     # Printing result
