@@ -703,7 +703,7 @@ if __name__ == "__main__":
     if use_custom_implementation:
         approximate_accuracy = False
 
-    if layers != None:
+    if layers is not None:
         layers = [int(conv_index.strip()) for conv_index in layers.split(",")]
 
     input_mode = (image_path != None)
@@ -750,13 +750,16 @@ if __name__ == "__main__":
         target_op_indexes = [0] # monochromatic
         # target_op_indexes = [3, 6] # squeezenet
         # target_op_indexes = [28, 56, 70, 84] # inception_v2_resnet
-        target_op_indexes = [16, 29, 71, 75] # inception_v3
+        # target_op_indexes = [16, 29, 71, 75] # inception_v3
         # target_op_indexes = [16, 22, 34, 37] # inception_v4
-        target_op_indexes = [1, 2, 4, 7, 9, 10, 14, 16, 17, 21, 23, 24, 26, 28, 29, 71, 75, 81, 90] # inception_v3 all
-        target_op_indexes = [1, 2, 3, 5, 9, 10, 13, 15, 16, 20, 22, 23, 27, 29, 30, 34, 36, 37, 39, 41, 42, 114, 118] # inception_v4 all
-        target_op_indexes = [3, 6, 9, 13, 16, 19, 22, 26, 29, 32, 35, 38, 41, 44, 47, 50, 53, 56, 59, 62, 65, 68, 71, 74, 77, 80, 83, 86, 89, 92, 96, 99, 102] # resnet_v2 all
-        target_op_indexes = [1, 2, 4, 7, 9, 10, 14, 16, 17, 21, 23, 24, 28, 30, 31, 35, 37, 38, 42, 44, 45, 49, 51, 52, 56, 58, 59, 63, 65, 66, 70, 72, 73, 77, 79, 80, 82, 84, 85, 187] # inception_resnet_v2 all
-        target_op_indexes = [3, 6, 9, 12, 15, 18, 21, 24] # squeezenet all
+        # target_op_indexes = [1, 2, 4, 7, 9, 10, 14, 16, 17, 21, 23, 24, 26, 28, 29, 71, 75, 81, 90] # inception_v3 all
+        # target_op_indexes = [1, 2, 3, 5, 9, 10, 13, 15, 16, 20, 22, 23, 27, 29, 30, 34, 36, 37, 39, 41, 42, 114, 118] # inception_v4 all
+        # target_op_indexes = [3, 6, 9, 13, 16, 19, 22, 26, 29, 32, 35, 38, 41, 44, 47, 50, 53, 56, 59, 62, 65, 68, 71, 74, 77, 80, 83, 86, 89, 92, 96, 99, 102] # resnet_v2 all
+        # target_op_indexes = [1, 2, 4, 7, 9, 10, 14, 16, 17, 21, 23, 24, 28, 30, 31, 35, 37, 38, 42, 44, 45, 49, 51, 52, 56, 58, 59, 63, 65, 66, 70, 72, 73, 77, 79, 80, 82, 84, 85, 187] # inception_resnet_v2 all
+        # target_op_indexes = [3, 6, 9, 12, 15, 18, 21, 24] # squeezenet all
+        if layers is not None:
+            target_op_indexes = layers
+        print("Target conv layers : [%s]" % (", ". join([str(conv_index) for conv_index in target_op_indexes])))
 
         if approximate_accuracy:
             for i in target_op_indexes:
